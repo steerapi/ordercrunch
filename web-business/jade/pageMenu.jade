@@ -1,0 +1,14 @@
+div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
+  a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
+  h1 Manage Menus
+  a(ng-click="menuCtrl.newMenu()", data-icon="plus", data-role="button")
+    | New
+div(data-role='content', data-theme="c")
+  ul(data-role='listview', data-filter="true", data-inset='true')
+    li(ng-repeat="menu in menuCtrl.menus")
+      a
+        input(type="text", ng-model="menu.menuName")
+        span(data-mini="true", data-inline="true", data-role="button", data-icon="delete", ng-click="menuCtrl.deleteMenu($index)")
+          | Delete
+      a
+        a(href='#pageSectionSelect', ng-click="menuCtrl.menu=menu")

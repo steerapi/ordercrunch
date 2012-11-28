@@ -1,0 +1,57 @@
+div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
+  a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
+  h1 {{employeesCtrl.employee.employeeName}} The Employee
+  a(data-icon="plus", data-role="button", ng-click="employeesCtrl.newShift()")
+    | New Shift
+
+div(data-role='content',ng-init="employeesCtrl.tap='default'")
+  div(ng-show="employeesCtrl.tap=='default'")
+    form
+      ul(data-role="listview", data-inset="true")
+        li(data-role="fieldcontain")
+          fieldset(data-role="controlgroup",data-type="horizontal")
+            legend Select Day:
+            select(ng-model="employeesCtrl.dayOfWeek", ng-options="value for value in employeesCtrl.days")
+
+    ul.collapsible-list(ng-repeat="interval in employeesCtrl.regularHours[employeesCtrl.dayOfWeek]",data-role="listview", data-inset="true")
+      div(data-role="collapsible")
+        h3 {{interval[0]}} - {{interval[1]}}
+        ul(class="ui-listview ui-listview-inset ui-corner-all ui-shadow")
+          li(data-role="fieldcontain", class="ui-body ui-br ui-li ui-li-static ui-btn-up-c ui-corner-top")
+            fieldset(data-role="controlgroup",data-type="horizontal", for="name")
+              legend Start Time:
+              input(ng-model="interval[0]", type='date', data-role='datebox', data-options='{"mode": "timebox", "useClearButton": true}')
+          li(data-role="fieldcontain", class="ui-body ui-br ui-li ui-li-static ui-btn-up-c ui-corner-top")
+            fieldset(data-role="controlgroup",data-type="horizontal", for="name")
+              legend End Time:
+              input(ng-model="interval[1]", type='date', data-role='datebox', data-options='{"mode": "timebox", "useClearButton": true}')
+
+  div(ng-show="employeesCtrl.tap=='specific'")
+    form
+      ul(data-role="listview", data-inset="true")
+        li(data-role="fieldcontain")
+          fieldset(data-role="controlgroup",data-type="horizontal", for="name")
+            legend Select Date:
+            input(ng-model="employeesCtrl.dateOfYear", type='date', data-role='datebox', data-options='{"mode": "calbox", "minDays":0}')
+    ul.collapsible-list(ng-repeat="interval in employeesCtrl.specialHours[employeesCtrl.dateOfYear]",data-role="listview", data-inset="true")
+      div(data-role="collapsible")
+        h3 {{interval[0]}} - {{interval[1]}}
+        ul(class="ui-listview ui-listview-inset ui-corner-all ui-shadow")
+          li(data-role="fieldcontain", class="ui-body ui-br ui-li ui-li-static ui-btn-up-c ui-corner-top")
+            fieldset(data-role="controlgroup",data-type="horizontal", for="name")
+              legend Start Time:
+              input(ng-model="interval[0]", type='date', data-role='datebox', data-options='{"mode": "timebox", "useClearButton": true}')
+          li(data-role="fieldcontain", class="ui-body ui-br ui-li ui-li-static ui-btn-up-c ui-corner-top")
+            fieldset(data-role="controlgroup",data-type="horizontal", for="name")
+              legend End Time:
+              input(ng-model="interval[1]", type='date', data-role='datebox', data-options='{"mode": "timebox", "useClearButton": true}')
+
+div(data-role="footer", data-position="fixed")
+  div(data-role="navbar", data-iconpos="top")
+    ul
+      li
+        a.ui-btn-active.ui-state-persist(ng-click="employeesCtrl.tap='default'")
+          | Default Week
+      li
+        a(ng-click="employeesCtrl.tap='specific'")
+          | Specific Day

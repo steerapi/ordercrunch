@@ -1,0 +1,40 @@
+div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
+  //- a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
+  h1 Create Business
+div(data-role='content')
+  form
+    ul(data-role="listview", data-inset="true")
+      li(data-role="fieldcontain")
+        p {{error}}
+      li(data-role="fieldcontain")
+        fieldset(data-role="controlgroup",data-type="horizontal", for="name")
+          legend Business Name:
+          input(type='text', ng-model="data.businessName", name='name', value='',placeholder="Username")
+      li(data-role="fieldcontain")
+        fieldset(data-role="controlgroup",data-type="horizontal", for="phone")
+          legend Phone:
+          input(type='text', ng-model="data.phone", name='phone', value='',placeholder="Phone")
+      li(data-role="fieldcontain")
+        fieldset(data-role="controlgroup",data-type="horizontal",for="street_address") 
+          legend Street Address:
+          input(type='text', ng-model="data.street_address", name='street_address', value='', placeholder="Street Address")
+      li(data-role="fieldcontain")
+        fieldset(data-role="controlgroup",data-type="horizontal",for="city") 
+          legend City:
+          input(type='text', ng-model="data.city", name='city', value='',placeholder="City")
+      li(data-role="fieldcontain")
+        fieldset(data-role="controlgroup",data-type="horizontal",for="region") 
+          legend State:
+          input(type='text', ng-model="data.region", name='region', value='',placeholder="State")
+      li(data-role="fieldcontain")
+        fieldset(data-role="controlgroup",data-type="horizontal",for="postal_code") 
+          legend Postal Code:
+          input(type='text', ng-model="data.postal_code", name='postal_code', value='',placeholder="Postal Code")
+      li(data-role="fieldcontain")
+        fieldset(data-role="controlgroup",data-type="horizontal",for="country")
+          legend Country:
+          input(type='text', ng-model="data.country", name='country', value='',placeholder="Country")
+      li.ui-body
+        fieldset
+          button.ui-block-a(ng-click="createBusiness()")
+            | Create

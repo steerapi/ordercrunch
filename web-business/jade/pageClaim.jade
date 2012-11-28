@@ -1,0 +1,20 @@
+div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
+  //- a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
+  h1 Claim Business
+  a.ui-btn-right(data-icon="plus", data-role="button", href="#pageCreateBusiness")
+    | New Business
+div(data-role='content', data-theme="c")
+  p {{claimCtrl.error}}
+  fieldset(data-role='controlgroup')
+    input#eatnow.search(ng-change="claimCtrl.search()",ng-model="claimCtrl.searchTxt", name='', placeholder='Search by name', value='', type='search')
+  ul(data-role='listview', data-filter="true", data-inset='true')
+    li(ng-repeat="business in claimCtrl.businesses")
+      a(ng-click='claimCtrl.claim(business)')
+        h3 {{business.name}}
+        p {{business.street_address}} ({{business.phone}})
+        h3(ng-show="business.has_menu") [has menus]
+        p.ui-li-aside
+          | Claim this
+  div
+    a(href="mailto:foodcrunch.email@gmail.com",data-transition='fade', ng-click="contact()")
+      | Contact us

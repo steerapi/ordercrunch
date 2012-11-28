@@ -1,0 +1,82 @@
+div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
+  a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
+  h1 Manage Orders
+div(ng-init="tap='incoming'", data-role='content', data-theme="c")
+  div(ng-show="tap=='incoming'")
+    ul.collapsible-list(data-role='listview', data-filter='true', data-inset="true")
+      div(data-role="collapsible", ng-repeat="order in incoming")
+        h3 Order ID: {{order.uuid.substr(0,5)}} from {{order.from.name}}
+        div
+          .ui.body 
+            h1 ID: {{order.uuid}}
+            h2 From: {{order.from.name}}
+            br
+            p {{order.from.phone}}
+            p {{order.from.email}}
+          .ui-grid-b(style="padding: 10px;")
+            .ui-block-a
+              h2 Item
+            .ui-block-b
+              h2(style="text-align:center;") Qty
+            .ui-block-c
+              h2(style="float:right;") Price
+          .ui-grid-b(style="padding: 10px;", ng-repeat="item in order.items")
+            .ui-block-a
+              div {{item.itemName}}
+            .ui-block-b
+              div(style="text-align:center;") {{item.qty}}
+            .ui-block-c
+              div(style="float:right;") ${{item.price}}
+         .ui-grid-b(style="padding: 10px;")
+            .ui-block-a
+            .ui-block-b
+              div(style="float:right;") Total:
+            .ui-block-c
+              div(style="float:right;") ${{order.total}}
+          .ui-body
+            button(data-role='button', ng-click="complete(order,$index)")
+              | Complete Order!
+  div(ng-show="tap=='completed'")
+    ul.collapsible-list(data-role='listview', data-filter='true', data-inset="true")
+      div(ng-show="order.status=='completed'",data-role="collapsible", ng-repeat="order in completed")
+        h3 Order ID: {{order.uuid.substr(0,5)}} from {{order.from.name}}
+        div
+          .ui.body 
+            h1 ID: {{order.uuid}}
+            h2 From: {{order.from.name}}
+            br
+            p {{order.from.phone}}
+            p {{order.from.email}}
+          .ui-grid-b(style="padding: 10px;")
+            .ui-block-a
+              h2 Item
+            .ui-block-b
+              h2(style="text-align:center;") Qty
+            .ui-block-c
+              h2(style="float:right;") Price
+          .ui-grid-b(style="padding: 10px;", ng-repeat="item in order.items")
+            .ui-block-a
+              div {{item.itemName}}
+            .ui-block-b
+              div(style="text-align:center;") {{item.qty}}
+            .ui-block-c
+              div(style="float:right;") {{currency.format(item.price)}}
+         .ui-grid-b(style="padding: 10px;")
+            .ui-block-a
+            .ui-block-b
+              div(style="float:right;") Total:
+            .ui-block-c
+              div(style="float:right;") {{currency.format(order.total)}}
+          .ui-body
+            button(data-role='button', ng-click="archive(order,$index)")
+              | Archive
+      
+div(data-role="footer", data-position="fixed")
+  div(data-role="navbar", data-iconpos="top")
+    ul
+      li
+        a.ui-btn-active.ui-state-persist(ng-click="tap='incoming'")
+          | Incoming
+      li
+        a(ng-click="tap='completed'")
+          | Completed

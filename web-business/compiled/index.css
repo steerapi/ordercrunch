@@ -1,0 +1,305 @@
+[data-role=datebox] {
+  -webkit-box-shadow: rgba(0,0,0,0.2) 0px 0px 0px 0px inset;
+  box-shadow: rgba(0,0,0,0.2) 0px 0px 0px 0px inset;
+}
+.ui-datebox-container .ui-datebox-gridheader {
+  text-align: center;
+/* Blt icon color
+  -----------------------------------------------------------------------------------------------------------*/
+/* HD/"retina" sprite
+  -----------------------------------------------------------------------------------------------------------*/
+/* plus minus */
+/* delete/close */
+/* arrows */
+/* misc */
+/* checks,radios */
+/* loading icon */
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon,
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-searchfield:after {
+  background: #666;
+/*{global-icon-color}*/
+  background-image: url("css/themes/images/icons-18-white.png");
+/*{global-icon-set}*/
+  background-repeat: no-repeat;
+  -moz-border-radius: 9px;
+  -webkit-border-radius: 9px;
+  border-radius: 9px;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-alt {
+  background: #fff;
+  background: rgba(255,255,255,0.3);
+  background-image: url("images/icons-18-black.png");
+  background-repeat: no-repeat;
+}
+@media only screen and (-webkit-min-device-pixel-ratio: 1.5),only screen and (min--moz-device-pixel-ratio: 1.5),only screen and (min-resolution: 240dpi) {
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-plus,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-minus,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-delete,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-arrow-r,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-arrow-l,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-arrow-u,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-arrow-d,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-check,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-gear,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-refresh,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-forward,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-back,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-grid,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-star,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-alert,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-info,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-home,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-search,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-searchfield:after,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-checkbox-off,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-checkbox-on,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-radio-off,
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-radio-on {
+    background-image: url("images/icons-36-white.png");
+/*{global-large-icon-set}*/
+    -moz-background-size: 776px 18px;
+    -o-background-size: 776px 18px;
+    -webkit-background-size: 776px 18px;
+    background-size: 776px 18px;
+  }
+  .ui-datebox-container .ui-datebox-gridheader .ui-icon-alt {
+    background-image: url("images/icons-36-black.png");
+  }
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-plus {
+  background-position: 0 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-minus {
+  background-position: -36px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-delete {
+  background-position: -72px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-arrow-r {
+  background-position: -108px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-arrow-l {
+  background-position: -144px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-arrow-u {
+  background-position: -180px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-arrow-d {
+  background-position: -216px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-check {
+  background-position: -252px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-gear {
+  background-position: -288px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-refresh {
+  background-position: -324px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-forward {
+  background-position: -360px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-back {
+  background-position: -396px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-grid {
+  background-position: -432px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-star {
+  background-position: -468px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-alert {
+  background-position: -504px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-info {
+  background-position: -540px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-home {
+  background-position: -576px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-search,
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-searchfield:after {
+  background-position: -612px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-checkbox-off {
+  background-position: -684px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-checkbox-on {
+  background-position: -648px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-radio-off {
+  background-position: -756px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-radio-on {
+  background-position: -720px 50%;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-checkbox .ui-icon {
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-checkbox-off,
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-radio-off {
+  background-color: transparent;
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-checkbox-on .ui-icon,
+.ui-datebox-container .ui-datebox-gridheader .ui-radio-on .ui-icon {
+  background-color: #3b4968;
+/*{global-active-background-color}*/
+/* NOTE: this hex should match the active state color. It's repeated here for cascade */
+}
+.ui-datebox-container .ui-datebox-gridheader .ui-icon-loading {
+  background: url("images/ajax-loader.gif");
+  background-size: 46px 46px;
+}
+[data-theme=c] .ui-icon,
+[data-theme=c] .ui-icon-searchfield:after {
+  background: #666;
+/*{global-icon-color}*/
+  background-image: url("css/themes/images/icons-18-white.png");
+/*{global-icon-set}*/
+  background-repeat: no-repeat;
+  -moz-border-radius: 9px;
+  -webkit-border-radius: 9px;
+  border-radius: 9px;
+}
+[data-theme=c] .ui-icon-alt {
+  background: #fff;
+  background: rgba(255,255,255,0.3);
+  background-image: url("images/icons-18-black.png");
+  background-repeat: no-repeat;
+}
+@media only screen and (-webkit-min-device-pixel-ratio: 1.5),only screen and (min--moz-device-pixel-ratio: 1.5),only screen and (min-resolution: 240dpi) {
+  [data-theme=c] .ui-icon-plus,
+  [data-theme=c] .ui-icon-minus,
+  [data-theme=c] .ui-icon-delete,
+  [data-theme=c] .ui-icon-arrow-r,
+  [data-theme=c] .ui-icon-arrow-l,
+  [data-theme=c] .ui-icon-arrow-u,
+  [data-theme=c] .ui-icon-arrow-d,
+  [data-theme=c] .ui-icon-check,
+  [data-theme=c] .ui-icon-gear,
+  [data-theme=c] .ui-icon-refresh,
+  [data-theme=c] .ui-icon-forward,
+  [data-theme=c] .ui-icon-back,
+  [data-theme=c] .ui-icon-grid,
+  [data-theme=c] .ui-icon-star,
+  [data-theme=c] .ui-icon-alert,
+  [data-theme=c] .ui-icon-info,
+  [data-theme=c] .ui-icon-home,
+  [data-theme=c] .ui-icon-search,
+  [data-theme=c] .ui-icon-searchfield:after,
+  [data-theme=c] .ui-icon-checkbox-off,
+  [data-theme=c] .ui-icon-checkbox-on,
+  [data-theme=c] .ui-icon-radio-off,
+  [data-theme=c] .ui-icon-radio-on {
+    background-image: url("images/icons-36-white.png");
+/*{global-large-icon-set}*/
+    -moz-background-size: 776px 18px;
+    -o-background-size: 776px 18px;
+    -webkit-background-size: 776px 18px;
+    background-size: 776px 18px;
+  }
+  [data-theme=c] .ui-icon-alt {
+    background-image: url("images/icons-36-black.png");
+  }
+}
+[data-theme=c] .ui-icon-plus {
+  background-position: 0 50%;
+}
+[data-theme=c] .ui-icon-minus {
+  background-position: -36px 50%;
+}
+[data-theme=c] .ui-icon-delete {
+  background-position: -72px 50%;
+}
+[data-theme=c] .ui-icon-arrow-r {
+  background-position: -108px 50%;
+}
+[data-theme=c] .ui-icon-arrow-l {
+  background-position: -144px 50%;
+}
+[data-theme=c] .ui-icon-arrow-u {
+  background-position: -180px 50%;
+}
+[data-theme=c] .ui-icon-arrow-d {
+  background-position: -216px 50%;
+}
+[data-theme=c] .ui-icon-check {
+  background-position: -252px 50%;
+}
+[data-theme=c] .ui-icon-gear {
+  background-position: -288px 50%;
+}
+[data-theme=c] .ui-icon-refresh {
+  background-position: -324px 50%;
+}
+[data-theme=c] .ui-icon-forward {
+  background-position: -360px 50%;
+}
+[data-theme=c] .ui-icon-back {
+  background-position: -396px 50%;
+}
+[data-theme=c] .ui-icon-grid {
+  background-position: -432px 50%;
+}
+[data-theme=c] .ui-icon-star {
+  background-position: -468px 50%;
+}
+[data-theme=c] .ui-icon-alert {
+  background-position: -504px 50%;
+}
+[data-theme=c] .ui-icon-info {
+  background-position: -540px 50%;
+}
+[data-theme=c] .ui-icon-home {
+  background-position: -576px 50%;
+}
+[data-theme=c] .ui-icon-search,
+[data-theme=c] .ui-icon-searchfield:after {
+  background-position: -612px 50%;
+}
+[data-theme=c] .ui-icon-checkbox-off {
+  background-position: -684px 50%;
+}
+[data-theme=c] .ui-icon-checkbox-on {
+  background-position: -648px 50%;
+}
+[data-theme=c] .ui-icon-radio-off {
+  background-position: -756px 50%;
+}
+[data-theme=c] .ui-icon-radio-on {
+  background-position: -720px 50%;
+}
+[data-theme=c] .ui-checkbox .ui-icon {
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+}
+[data-theme=c] .ui-icon-checkbox-off,
+[data-theme=c] .ui-icon-radio-off {
+  background-color: transparent;
+}
+[data-theme=c] .ui-checkbox-on .ui-icon,
+[data-theme=c] .ui-radio-on .ui-icon {
+  background-color: #3b4968;
+/*{global-active-background-color}*/
+/* NOTE: this hex should match the active state color. It's repeated here for cascade */
+}
+[data-theme=c] .ui-icon-loading {
+  background: url("images/ajax-loader.gif");
+  background-size: 46px 46px;
+}
+.collapsible-list .ui-collapsible {
+  margin: 0;
+}
+.collapsible-list .ui-collapsible .ui-li-heading {
+  margin: 0;
+}
+.ui-grid-a,
+.ui-grid-b,
+.ui-grid-c,
+.ui-grid-d {
+  overflow: visible !important;
+}
