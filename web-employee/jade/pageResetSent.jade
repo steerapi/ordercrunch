@@ -1,0 +1,18 @@
+div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
+  //- a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
+  h1 Forgot Password
+div(data-role='content')
+  p(ng-show="accountCtrl.resetSent=='true'") A reset email has been sent to your email address.
+  //- iframe(src='http://api.usergrid.com/steerapi/foodcrunch/users/resetpw', width='480', height='320', seamless='seamless')
+  ul(data-role="listview", data-inset="true")
+    li(data-role="fieldcontain")
+      include partialLogo
+      p {{accountCtrl.error}}
+    li(data-role="fieldcontain")
+      fieldset(data-role="controlgroup",data-type="horizontal")
+        legend Email:
+        input(type='email', ng-model="accountCtrl.email", name='email', value='',placeholder="Email")
+    li.ui-body
+      fieldset
+        a(data-role="button", ng-click="accountCtrl.forgot()")
+          | Reset

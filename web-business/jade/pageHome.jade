@@ -3,12 +3,20 @@ div(data-role='header', data-position='fixed', data-tap-toggle='false', data-upd
   h1 Welcome {{businessName}}
 div(data-role='content')
   a(href="#pageTime", data-role='button', ng-click="")
+    i.icon-time
     | Manage Hours
   a(href="#pageMenu",data-role='button', ng-click="")
+    i.icon-th-list
     | Manage Menus
   a(href="#pageOrders",data-role='button', ng-click="")
+    i.icon-shopping-cart
     | Manage Orders
   a(href="#pageEmployees",data-role='button', ng-click="")
+    i.icon-user
     | Manage Employees
   a(href="#pageSettings",data-role='button', ng-click="")
+    i.icon-cog
     | Settings
+  a(href='#pageLogin',data-role='button', ng-click="logout()")
+    i.icon-off
+    | Logout

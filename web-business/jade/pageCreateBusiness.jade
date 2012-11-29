@@ -1,6 +1,6 @@
 div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
   //- a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
-  h1 Create Business
+  h1 New Business
 div(data-role='content')
   form
     ul(data-role="listview", data-inset="true")
@@ -9,7 +9,7 @@ div(data-role='content')
       li(data-role="fieldcontain")
         fieldset(data-role="controlgroup",data-type="horizontal", for="name")
           legend Business Name:
-          input(type='text', ng-model="data.businessName", name='name', value='',placeholder="Username")
+          input(type='text', ng-model="data.businessName", name='name', value='',placeholder="Name")
       li(data-role="fieldcontain")
         fieldset(data-role="controlgroup",data-type="horizontal", for="phone")
           legend Phone:

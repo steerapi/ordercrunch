@@ -10,13 +10,14 @@ html
     meta(http-equiv='cleartype', content='on')
     meta(name='viewport', content='width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no')
 
-    title Foodcrunch Business
+    title OrderCrunch Business
 
     link(rel='stylesheet', href='css/reset.css')
     link(rel='stylesheet', href="css/themes/jquery.mobile-1.1.1.css")
     link(rel='stylesheet', href='css/themes/jqmfb.css')
     //- link(rel='stylesheet', href='css/themes/jquery.mobile.structure.css')
 
+    link(rel='stylesheet', href='css/bootstrap.css')
     
     script(src="lib/cordova-2.2.0.js")
     
@@ -157,5 +158,8 @@ html
       include jade/pageShiftCalendar
     #pageTime(data-role='page',data-add-back-btn="true", ng-controller="TimeCtrl")
       include jade/pageTime
-    
+    //- #popupCreateEmployee.ui-corner-all(data-role='popup', data-theme='a',ngm-shared-controller="employeesCtrl:EmployeesCtrl")
+    #pageCreateNewEmployee(data-role='page',data-add-back-btn="true", ngm-shared-controller="employeesCtrl:EmployeesCtrl")
+      include jade/pageCreateNewEmployee
+
     

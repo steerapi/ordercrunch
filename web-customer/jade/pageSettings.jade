@@ -1,0 +1,39 @@
+div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
+  a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
+  h1 Manage Settings
+div(data-role='content')
+  form
+    //- ul(data-role="listview", data-inset="true")
+    //-   li(data-role="fieldcontain")
+    //-     fieldset(data-role="controlgroup",data-type="horizontal", for="name")
+    //-       legend Name: 
+    //-       input(type='text', ng-model="employeeName", name='name', value='',placeholder="Name")
+    //-   li(data-role="fieldcontain")
+    //-     fieldset(data-role="controlgroup",data-type="horizontal",for="avgtime") 
+    //-       legend Average time to fulfill an order (min):
+    //-       input(type='text', ng-model="business.avgtime", name='avgtime', value='', placeholder="15")
+    //-   li(data-role="fieldcontain")
+    //-     fieldset(data-role="controlgroup",data-type="horizontal",for="maxorders") 
+    //-       legend Maximum number of orders that can be fulfilled in 15 minutes: 
+    //-       input(type='text', ng-model="business.maxorders", name='maxorders', value='',placeholder="10")
+    //-   li(data-role="fieldcontain")
+    //-     fieldset(data-role="controlgroup",data-type="horizontal", for="maxdiscount")
+    //-       legend Maximum discount per order (%):
+    //-       input(type='text', ng-model="business.maxdiscount", name='maxdiscount', value='',placeholder="10")
+    ul.collapsible-list(data-role="listview", data-inset="true")
+      div(data-role="collapsible")
+        h3 Change Password
+        ul(class="ui-listview ui-listview-inset ui-corner-all ui-shadow")
+          {{passwordSetStatus}}
+          li(data-role="fieldcontain", class="ui-body ui-br ui-li ui-li-static ui-btn-up-c ui-corner-top")
+            fieldset(data-role="controlgroup",data-type="horizontal", for="oldpassword")
+              legend Old Password:
+              input(type='password', ng-model="oldpassword", name='oldpassword', value='',placeholder="Old Password")
+          li(data-role="fieldcontain", class="ui-body ui-br ui-li ui-li-static ui-btn-up-c ui-corner-top")
+            fieldset(data-role="controlgroup",data-type="horizontal", for="password")
+              legend New Password:
+              input(type='password', ng-model="password", name='password', value='',placeholder="New Password")
+          li.ui-body
+            fieldset
+              button.ui-block-a(ng-click="setPassword()")
+                | Set Password

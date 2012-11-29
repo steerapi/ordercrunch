@@ -71,7 +71,7 @@ app.service "Model", EntityModelFactory
 async = require "async"
 CollectionModelFactory = ($http, $parse, $entity)->
   class CollectionModel
-    constructor: (@baseurl, @fromCollection, @fromId, @toCollection, @ql, @idprop="uuid")->
+    constructor: (@baseurl, @fromCollection, @fromId, @toCollection, @ql, @delete=true, @idprop="uuid")->
       if @fromId and @toCollection
         @path = "/#{@fromCollection}/#{@fromId}/#{@toCollection}"
       else
@@ -143,15 +143,19 @@ CollectionModelFactory = ($http, $parse, $entity)->
       #TODO: Actually we should unbind befor removing from elements to avoid error. It's ok for now.
       @watch()
       toRemoves.forEach (uuid, i)=>
-        # query = new Usergrid.Query "DELETE", "/#{@fromCollection}/#{@fromId}/#{@toCollection}/#{uuid}/", null, null, (response) =>
-        query = new Usergrid.Query "DELETE", "/#{@toCollection}/#{uuid}/", null, null, (response) ->
-          console.log "DELETED"
-        , ->
-          console.log arguments
-        Usergrid.ApiClient.runAppQuery query
-        # ,->
-          # console.log arguments
-        # Usergrid.ApiClient.runAppQuery query
+        if @delete
+          query = new Usergrid.Query "DELETE", "/#{@toCollection}/#{uuid}/", null, null, (response) ->
+            console.log "DELETED"
+          , ->
+            console.log arguments
+          Usergrid.ApiClient.runAppQuery query
+        else
+          query = new Usergrid.Query "DELETE", "/#{@fromCollection}/#{@fromId}/#{@toCollection}/#{uuid}/", null, null, (response) =>
+            console.log "DELETED"
+          , ->
+            console.log arguments
+          Usergrid.ApiClient.runAppQuery query
+
     bind: (scope, prop)->
       # Get data
       @prop = prop

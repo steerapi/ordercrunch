@@ -1,0 +1,31 @@
+ul
+  li
+    a(data-rel='back')
+      i.icon-chevron-left.icon-white
+      | Back
+h3 Menu
+ul
+  li
+    a(href='#pageHome')
+      i.icon-home.icon-white
+      | Home
+  //- li(ng-repeat="employee in employees")
+  //-   a(href='#pageEmployees')
+  //-     i.icon-calendar.icon-white
+  //-     | {{employee.employeeName}}
+  li
+    a(href='#pageJoin')
+      i.icon-share.icon-white
+      | Join Businesses
+  li
+    a(href='#pageEmployees')
+      i.icon-time.icon-white
+      | Shifts
+  li
+    a(href='#pageSettings')
+      i.icon-cog.icon-white
+      | Settings
+  li
+    a(href='#pageLogin', ng-click="logout()")
+      i.icon-off.icon-white
+      | Logout

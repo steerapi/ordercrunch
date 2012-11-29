@@ -1,0 +1,31 @@
+div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
+  //- a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
+  h1 Login
+div(data-role='content')
+  form
+    ul(data-role="listview", data-inset="true")
+      li(data-role="fieldcontain")
+        include partialLogo
+        br
+        p {{accountCtrl.error}}
+      li(data-role="fieldcontain")
+        fieldset(data-role="controlgroup",data-type="horizontal")
+          legend Username:
+          input(type='text', ng-model="accountCtrl.username", name='username', value='',placeholder="Username",autocapitalize="off",autocorrect="off")
+      li(data-role="fieldcontain")
+        fieldset(data-role="controlgroup",data-type="horizontal")
+          legend Password:
+          input(type='password', ng-model="accountCtrl.password", name='password', value='',placeholder="Password",autocapitalize="off",autocorrect="off")
+      li.ui-body
+        fieldset
+          button.ui-block-a(ng-click="accountCtrl.login()")
+            | Login
+  div
+    a(data-transition='fade', href="#pageSignup")
+      | Sign Up
+  div
+    a(href="#pageResetSent")
+      | Forgot Password?
+//- div(data-role='footer', data-position='fixed')
+//-   a(href='http://locu.com')
+//-       img(height='25', width='155', src='http://locu.com/static/images/dev/poweredby-white@2x.png', alt='Powered by Locu')

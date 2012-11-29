@@ -36,7 +36,7 @@ requiresLogin = (req,res,next)->
       next()
     else
       console.log "Please logged in"
-      res.send 404
+      res.send 401
   ), ->
     console.log "No session could be established. Please try again."
     res.send 404
@@ -52,6 +52,12 @@ ModelAPI.register app, requiresLogin
 
 LocuAPI = require "./apis/locu"
 LocuAPI.register app, requiresLogin
+
+UserAPI = require "./apis/user"
+UserAPI.register app, requiresLogin
+
+ApigeeAPI = require "./apis/apigee"
+ApigeeAPI.register app, requiresLogin
 
 # 
 # req = http.request 

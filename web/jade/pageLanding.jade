@@ -1,0 +1,48 @@
+include navbar
+.container
+  .row
+    .span4.align-center
+      //- a(href="http://customer.ordercrunchapp.com")
+      a
+        .row
+          .span4.align-center
+            div
+              div(style="position:relative;")
+                div(style="position:absolute;top:200px;left:88px")
+                  p.lead Coming Soon
+                //- - var ids = [1,2,3,4]
+                //- - each id, key in ids
+                //-   div(style="position:absolute;top:76px;left:55px")
+                //-     img(src="img/customer#{id}.png")
+                img(src="img/iphone.png")
+        .row
+          .span4
+            p.lead Customer
+    .span4.align-center(ng-controller="BusinessSlideCtrl")
+      a(href="http://business.ordercrunchapp.com")
+        .row
+          .span4.align-center
+            div
+              div(style="position:relative;")
+                div(style="position:absolute;top:76px;left:55px")
+                  img(ng-src="img/business/business{{ids[current]}}.png",style="width:193px;height:290px")
+                img(src="img/iphone.png")
+        .row
+          .span4
+            a
+              p.lead Business
+    .span4.align-center(ng-controller="EmployeeSlideCtrl")
+      a(href="http://employee.ordercrunchapp.com")
+        .row
+          .span4.align-center
+            div
+              div(style="position:relative;")
+                div(style="position:absolute;top:76px;left:55px")
+                  img(ng-src="img/employee/employee{{ids[current]}}.png",style="width:193px;height:290px")
+                img(src="img/iphone.png")
+        .row
+          .span4
+            a
+              p.lead Employee
+  p.lead(style="padding-top:20px")
+    | We're a different kind of ordering app. We help not only customers, but also businesses manage the flow of orders by offering customers discounts to order at off-peak times. We also offer discounts for multi-week subscriptions. Businesses get incremental revenue, easier labor scheduling, and happier customers. Consumers get a quick intuitive ordering app, discounts, and the ability to invite their friends to lunch.

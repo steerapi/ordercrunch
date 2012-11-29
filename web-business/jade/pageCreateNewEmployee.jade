@@ -1,0 +1,21 @@
+div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
+  //- a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
+  h1 New Employee
+div(data-role='content')
+  form
+    ul(data-role="listview", data-inset="true")
+      li(data-role="fieldcontain")
+        br
+        p {{employeesCtrl.error}}
+      li(data-role="fieldcontain")
+        fieldset(data-role="controlgroup",data-type="horizontal", for="name")
+          legend Username:
+          input(type='text', ng-model="employeesCtrl.nEmployee.username", name='name', value='',placeholder="Username")
+      li(data-role="fieldcontain")
+        fieldset(data-role="controlgroup",data-type="horizontal", for="phone")
+          legend Email:
+          input(type='text', ng-model="employeesCtrl.nEmployee.email", name='phone', value='',placeholder="Email")
+      li.ui-body
+        fieldset
+          button.ui-block-a(ng-click="employeesCtrl.newEmployee()")
+            | Create

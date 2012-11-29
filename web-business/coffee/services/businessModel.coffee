@@ -11,9 +11,12 @@ querystring = require "querystring"
 
 class BusinessModel
   getBusiness: (uuid, scb, ecb)->
+    # req = @http.post "#{backendurl}/api/v1/login",
+    #   username: "tester"
+    #   password: "tester"
     # Usergrid.ApiClient.logInAppUser "tester", "tester", (response, user) ->
     #   business = new Usergrid.Entity "businesses"
-    #   business.set "uuid", "2a929a7e-37e7-11e2-a0f7-02e81ae640dc"
+    #   business.set "uuid", "db5a66ad-3983-11e2-87fc-02e81ac5a17b"
     #   business.fetch ->
     #     scb(business)
     # return

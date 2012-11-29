@@ -6,15 +6,16 @@ div(data-role='content')
     ul(data-role="listview", data-inset="true")
       li(data-role="fieldcontain")
         include partialLogo
+        br
         p {{accountCtrl.error}}
       li(data-role="fieldcontain")
         fieldset(data-role="controlgroup",data-type="horizontal")
           legend Username:
-          input(type='text', ng-model="accountCtrl.username", name='username', value='',placeholder="Username")
+          input(type='text', ng-model="accountCtrl.username", name='username', value='',placeholder="Username",autocapitalize="off",autocorrect="off")
       li(data-role="fieldcontain")
         fieldset(data-role="controlgroup",data-type="horizontal")
           legend Password:
-          input(type='password', ng-model="accountCtrl.password", name='password', value='',placeholder="Password")
+          input(type='password', ng-model="accountCtrl.password", name='password', value='',placeholder="Password",autocapitalize="off",autocorrect="off")
       li.ui-body
         fieldset
           button.ui-block-a(ng-click="accountCtrl.login()")

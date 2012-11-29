@@ -40,12 +40,11 @@ saveBusiness = (businessObj, cb)->
   tmp = clone businessObj
   if tmp.open_hours
     for day,hours in tmp.open_hours
-      sps = hours.split("-")
-      open = _s(sps[0]).trim()
-      close = _s(sps[1]).trim()
-      hours.splice 0, hours.length
-      hours.push open
-      hours.push close
+      for hour,i in hours        
+        sps = hour.split("-")
+        open = _s(sps[0]).trim()
+        close = _s(sps[1]).trim()
+        hours[i] = [open,close]
   tmp.businessName = tmp.name
   delete tmp.name
   delete tmp.menus

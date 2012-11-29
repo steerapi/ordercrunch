@@ -1,3 +1,5 @@
+DateUtils = require('date-utils')
+
 class AccountCtrl
   proceed: =>
     user = Usergrid.ApiClient.getLoggedInUser()
@@ -134,8 +136,6 @@ class CreateBusinessCtrl
 
 CreateBusinessCtrl.$inject = ["$scope", "BusinessModel", "$http"]
 app.controller("CreateBusinessCtrl", CreateBusinessCtrl)
-
-DateUtils = require('date-utils')
 
 class TimeCtrl
   newInterval: =>
@@ -274,6 +274,7 @@ class OrdersCtrl
 OrdersCtrl.$inject = ["$scope", "BusinessModel", "$http", "CollectionModel"]
 app.controller("OrdersCtrl", OrdersCtrl)
 
+async = require "async"
 class EmployeesCtrl
   newShift: =>
     if @scope.tap == 'default'
@@ -296,21 +297,72 @@ class EmployeesCtrl
         delete obj[k]
         continue
     return
+  approveEmployee: (index)=>
+    console.log @scope.employees[index]
+    @scope.employees[index].approved = "approved"
   deleteEmployee: (index)=>
     @scope.employees.splice index,1
+  getNewEmployeeUUID: (cb)=>
+    index = @scope.employees.length-1
+    dereg = @scope.$watch "employees[#{index}].uuid", (newV, oldV)=>
+      if newV
+        dereg()
+        cb(null, newV)
+  link: (col1,id1,col2,id2,cb)=>
+    req = @http.post "#{backendurl}/apigee/api/v1/#{col1}/#{id1}/#{col2}/#{id2}"
+    req.success =>
+      cb()
+    req.error =>
+      cb("error")
   newEmployee: =>
-    @scope.employees.push {}
-  constructor: (@scope,@bmodel,@http,@model,CModel)->
+    @scope.error = ""
+    if not @scope.nEmployee
+      @scope.error = "Error creating a new employee"
+      return
+    #Create user
+    req = @http.post "#{backendurl}/api/v1/createUser",
+      obj: @scope.nEmployee
+    req.success (userUUID)=>
+      #Create employee
+      @scope.employees.push 
+        businessName: @scope.business.get "businessName"
+      @getNewEmployeeUUID (err, employeeUUID)=>
+        if err
+          @scope.error = "Error creating a new employee"
+          return
+        async.parallel [ (cb)=>
+          @link "users",userUUID,"employees",employeeUUID, (err)=>
+            if err
+              cb "error"
+              return
+            cb null
+        , (cb)=>
+          buuid = @scope.business.get "uuid"
+          @link "employees", employeeUUID, "businesses", buuid, (err)=>
+            if err
+              cb "error"
+              return
+            cb null
+        ], (err)=>
+          if not err
+            history.back()
+          else
+            @scope.error = "Error creating a new employee"
+    req.error =>
+      @scope.error = "Error creating a new employee"
 
+  constructor: (@scope,@bmodel,@http,@model,CModel)->
+    @scope.approveEmployee = @approveEmployee
     @scope.newEmployee = @newEmployee
     @scope.deleteEmployee = @deleteEmployee
     @scope.$on "pageEmployees", =>
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
       @bmodel.getBusiness uuid, (business)=>
+        @scope.business = business
         buuid = business.get "uuid"
         @employeesCModel?.unbind()
-        @employeesCModel = new CModel("#{backendurl}/api/v1", "businesses", buuid, "employees")
+        @employeesCModel = new CModel("#{backendurl}/api/v1", "businesses", buuid, "employees", null)
         @employeesCModel.bind @scope,"employees"
         @scope.$apply()
 

@@ -1736,12 +1736,13 @@ require.define("/coffee/services/model.coffee",function(require,module,exports,_
     var CollectionModel;
     CollectionModel = (function() {
 
-      function CollectionModel(baseurl, fromCollection, fromId, toCollection, ql, idprop) {
+      function CollectionModel(baseurl, fromCollection, fromId, toCollection, ql, _delete, idprop) {
         this.baseurl = baseurl;
         this.fromCollection = fromCollection;
         this.fromId = fromId;
         this.toCollection = toCollection;
         this.ql = ql;
+        this["delete"] = _delete != null ? _delete : true;
         this.idprop = idprop != null ? idprop : "uuid";
         if (this.fromId && this.toCollection) {
           this.path = "/" + this.fromCollection + "/" + this.fromId + "/" + this.toCollection;
@@ -1807,12 +1808,21 @@ require.define("/coffee/services/model.coffee",function(require,module,exports,_
         this.watch();
         return toRemoves.forEach(function(uuid, i) {
           var query;
-          query = new Usergrid.Query("DELETE", "/" + _this.toCollection + "/" + uuid + "/", null, null, function(response) {
-            return console.log("DELETED");
-          }, function() {
-            return console.log(arguments);
-          });
-          return Usergrid.ApiClient.runAppQuery(query);
+          if (_this["delete"]) {
+            query = new Usergrid.Query("DELETE", "/" + _this.toCollection + "/" + uuid + "/", null, null, function(response) {
+              return console.log("DELETED");
+            }, function() {
+              return console.log(arguments);
+            });
+            return Usergrid.ApiClient.runAppQuery(query);
+          } else {
+            query = new Usergrid.Query("DELETE", "/" + _this.fromCollection + "/" + _this.fromId + "/" + _this.toCollection + "/" + uuid + "/", null, null, function(response) {
+              return console.log("DELETED");
+            }, function() {
+              return console.log(arguments);
+            });
+            return Usergrid.ApiClient.runAppQuery(query);
+          }
         });
       };
 
@@ -16026,8 +16036,10 @@ exports.StringSet.prototype = StringSetPrototype;
 });
 
 require.define("/coffee/controller.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
-  var AccountCtrl, ClaimCtrl, CreateBusinessCtrl, DateUtils, EmployeesCtrl, HomeCtrl, MenuCtrl, NavigatorCtrl, OrdersCtrl, SettingsCtrl, TimeCtrl, querystring, _,
+  var AccountCtrl, ClaimCtrl, CreateBusinessCtrl, DateUtils, EmployeesCtrl, HomeCtrl, MenuCtrl, NavigatorCtrl, OrdersCtrl, SettingsCtrl, TimeCtrl, async, querystring, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  DateUtils = require('date-utils');
 
   AccountCtrl = (function() {
 
@@ -16239,8 +16251,6 @@ require.define("/coffee/controller.coffee",function(require,module,exports,__dir
   CreateBusinessCtrl.$inject = ["$scope", "BusinessModel", "$http"];
 
   app.controller("CreateBusinessCtrl", CreateBusinessCtrl);
-
-  DateUtils = require('date-utils');
 
   TimeCtrl = (function() {
 
@@ -16496,6 +16506,8 @@ require.define("/coffee/controller.coffee",function(require,module,exports,__dir
 
   app.controller("OrdersCtrl", OrdersCtrl);
 
+  async = require("async");
+
   EmployeesCtrl = (function() {
 
     EmployeesCtrl.prototype.newShift = function() {
@@ -16535,12 +16547,91 @@ require.define("/coffee/controller.coffee",function(require,module,exports,__dir
       }
     };
 
+    EmployeesCtrl.prototype.approveEmployee = function(index) {
+      console.log(this.scope.employees[index]);
+      return this.scope.employees[index].approved = "approved";
+    };
+
     EmployeesCtrl.prototype.deleteEmployee = function(index) {
       return this.scope.employees.splice(index, 1);
     };
 
+    EmployeesCtrl.prototype.getNewEmployeeUUID = function(cb) {
+      var dereg, index,
+        _this = this;
+      index = this.scope.employees.length - 1;
+      return dereg = this.scope.$watch("employees[" + index + "].uuid", function(newV, oldV) {
+        if (newV) {
+          dereg();
+          return cb(null, newV);
+        }
+      });
+    };
+
+    EmployeesCtrl.prototype.link = function(col1, id1, col2, id2, cb) {
+      var req,
+        _this = this;
+      req = this.http.post("" + backendurl + "/apigee/api/v1/" + col1 + "/" + id1 + "/" + col2 + "/" + id2);
+      req.success(function() {
+        return cb();
+      });
+      return req.error(function() {
+        return cb("error");
+      });
+    };
+
     EmployeesCtrl.prototype.newEmployee = function() {
-      return this.scope.employees.push({});
+      var req,
+        _this = this;
+      this.scope.error = "";
+      if (!this.scope.nEmployee) {
+        this.scope.error = "Error creating a new employee";
+        return;
+      }
+      req = this.http.post("" + backendurl + "/api/v1/createUser", {
+        obj: this.scope.nEmployee
+      });
+      req.success(function(userUUID) {
+        _this.scope.employees.push({
+          businessName: _this.scope.business.get("businessName")
+        });
+        return _this.getNewEmployeeUUID(function(err, employeeUUID) {
+          if (err) {
+            _this.scope.error = "Error creating a new employee";
+            return;
+          }
+          return async.parallel([
+            function(cb) {
+              return _this.link("users", userUUID, "employees", employeeUUID, function(err) {
+                if (err) {
+                  cb("error");
+                  return;
+                }
+                return cb(null);
+              });
+            }, function(cb) {
+              var buuid;
+              buuid = _this.scope.business.get("uuid");
+              return _this.link("employees", employeeUUID, "businesses", buuid, function(err) {
+                if (err) {
+                  cb("error");
+                  return;
+                }
+                return cb(null);
+              });
+            }
+          ], function(err) {
+            if (!err) {
+              return history.back();
+            } else {
+              return _this.scope.error = "Error creating a new employee";
+            }
+          });
+        });
+      });
+      return req.error(function() {
+        return _this.scope.error = "Error creating a new employee";
+      });
     };
 
     function EmployeesCtrl(scope, bmodel, http, model, CModel) {
@@ -16552,12 +16643,19 @@ require.define("/coffee/controller.coffee",function(require,module,exports,__dir
       this.model = model;
       this.newEmployee = __bind(this.newEmployee, this);
 
+      this.link = __bind(this.link, this);
+
+      this.getNewEmployeeUUID = __bind(this.getNewEmployeeUUID, this);
+
       this.deleteEmployee = __bind(this.deleteEmployee, this);
+
+      this.approveEmployee = __bind(this.approveEmployee, this);
 
       this.cleanData = __bind(this.cleanData, this);
 
       this.newShift = __bind(this.newShift, this);
 
+      this.scope.approveEmployee = this.approveEmployee;
       this.scope.newEmployee = this.newEmployee;
       this.scope.deleteEmployee = this.deleteEmployee;
       this.scope.$on("pageEmployees", function() {
@@ -16566,11 +16664,12 @@ require.define("/coffee/controller.coffee",function(require,module,exports,__dir
         uuid = user != null ? user.get("uuid") : void 0;
         return _this.bmodel.getBusiness(uuid, function(business) {
           var buuid, _ref;
+          _this.scope.business = business;
           buuid = business.get("uuid");
           if ((_ref = _this.employeesCModel) != null) {
             _ref.unbind();
           }
-          _this.employeesCModel = new CModel("" + backendurl + "/api/v1", "businesses", buuid, "employees");
+          _this.employeesCModel = new CModel("" + backendurl + "/api/v1", "businesses", buuid, "employees", null);
           _this.employeesCModel.bind(_this.scope, "employees");
           return _this.scope.$apply();
         });

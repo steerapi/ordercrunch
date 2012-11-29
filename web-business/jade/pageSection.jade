@@ -1,20 +1,22 @@
 div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
   a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
-  h1 Section
+  h1 {{menuCtrl.section.sectionName}}
   a(ng-click="menuCtrl.newItem()", data-icon="plus", data-role="button")
     | New Item
-div(data-role='content', data-theme="c")
+div(data-role='content',data-theme="c")
   ul(data-role='listview', data-split-icon="delete", data-filter="true", data-inset='true')
     li(ng-repeat="item in menuCtrl.items",data-role="fieldcontain")
       a
-        fieldset(data-role="controlgroup",data-type="horizontal", for="name")
-          .ui-grid-a
-            .ui-block-a
+        ul(class="ui-listview ui-listview-inset ui-corner-all ui-shadow")
+          li(data-role="fieldcontain", class="ui-body ui-br ui-li ui-li-static ui-btn-up-c ui-corner-top")
+            fieldset(data-role="controlgroup",data-type="horizontal", for="name")
+              legend Item: 
               input(type='text', ng-model="item.itemName", name='name', value='',placeholder="item")
-            .ui-block-b
-              | $  
+          li(data-role="fieldcontain", class="ui-body ui-br ui-li ui-li-static ui-btn-up-c ui-corner-top")
+            fieldset(data-role="controlgroup",data-type="horizontal", for="name")
+              legend Price: 
               input(type='text', ng-model="item.price", name='price', value='',placeholder="10")
-      a(ng-click="menuCtrl.deleteItem($index)")
+      a(data-theme="a",ng-click="menuCtrl.deleteItem($index)")
     //- li.ui-body
     //-   fieldset
     //-     button.ui-block-a(ng-click="save()")

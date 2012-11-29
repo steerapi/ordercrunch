@@ -60,13 +60,13 @@ div(ng-init="tap='incoming'", data-role='content', data-theme="c")
             .ui-block-b
               div(style="text-align:center;") {{item.qty}}
             .ui-block-c
-              div(style="float:right;") {{currency.format(item.price)}}
+              div(style="float:right;") {{item.price}}
          .ui-grid-b(style="padding: 10px;")
             .ui-block-a
             .ui-block-b
               div(style="float:right;") Total:
             .ui-block-c
-              div(style="float:right;") {{currency.format(order.total)}}
+              div(style="float:right;") {{order.total}}
           .ui-body
             button(data-role='button', ng-click="archive(order,$index)")
               | Archive

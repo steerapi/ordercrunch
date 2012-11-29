@@ -3,18 +3,18 @@ Usergrid = require('../usergrid')
 email = require "emailjs"
 server = email.server.connect
   user: "support@ordercrunchapp.com"
-  password: "support1234"
+  password: "ordercrunchsupport"
   host: "smtp.gmail.com"
   ssl: true
 
 randpass = require('randpass')
 
-sendPassword = (email, password, cb)->
+sendPassword = (username, email, password, cb)->
   server.send
-    text: "Your new password is #{password}."
+    text: "Hi #{username}, Your new password is #{password}. Thanks, OrderCrunch Support."
     from: "OrderCrunch Support <support@ordercrunchapp.com>"
     to: "#{email}"
-    subject: "Your OrderCrunch Password Reset"
+    subject: "Your OrderCrunch Password"
   , cb
 
 exports.register = (app,requiresLogin)->
@@ -51,11 +51,12 @@ exports.register = (app,requiresLogin)->
   app.post "/api/v1/setpw", requiresLogin, (req,res)->
     user = Usergrid.ApiClient.getLoggedInUser()
     useruuid = user.get "uuid"
+    username = user.get "username"
     newpass = randpass()
     query = new Usergrid.Query "POST", "/users/#{useruuid}/password", 
       newpassword: newpass
     , null, (output) ->
-      sendPassword email, newpass, (err)->
+      sendPassword username, email, newpass, (err)->
         if err
           res.send 404
         else
@@ -79,4 +80,22 @@ exports.register = (app,requiresLogin)->
     , ->
       res.send 404
     Usergrid.ApiClient.runAppQuery query
-  
+
+  app.post "/api/v1/createUser", requiresLogin, (req,res)->
+    username = req.body.obj.username
+    email = req.body.obj.email
+    newpass = randpass()
+    query = new Usergrid.Query "POST", "/users",
+      username: username
+      email: email
+      password: newpass
+    , null, (response)->
+      entityData = response.entities[0]
+      sendPassword username, email, newpass, (err)->
+        if err
+          res.send 404
+        else
+          res.send entityData.uuid
+    , ->
+      res.send 404
+    Usergrid.ApiClient.runAppQuery query
