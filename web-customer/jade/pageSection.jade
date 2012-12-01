@@ -1,0 +1,16 @@
+div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
+  //- a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
+  h1 {{menuCtrl.section.sectionName}}
+  include checkout
+div(data-role='content',data-theme="c")
+  ul(data-role='listview', data-filter="true", data-inset='true')
+    li(ng-show="item.price && !isNaN(item.price)",data-icon="plus",ng-repeat="item in menuCtrl.items",data-role="fieldcontain")
+      a(href="", ng-click="menuCtrl.addItem(item)")
+        div(style="float:left;white-space:normal;")
+          div {{menuCtrl.carts[item.uuid].qty}} {{item.itemName}} 
+        div(style="float:right;")
+          div ${{item.price}}
+    //- li.ui-body
+    //-   fieldset
+    //-     button.ui-block-a(ng-click="save()")
+    //-       | Save

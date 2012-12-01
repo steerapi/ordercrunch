@@ -70,7 +70,7 @@ class JoinCtrl
   search: =>
     @scope.error = ""
     params = querystring.stringify
-      ql: "select * where businessName contains '#{@scope.searchTxt}'"
+      ql: "select * where businessName contains '#{@scope.searchTxt}*'"
     req = @http.get "#{backendurl}/apigee/api/v1/businesses?#{params}"
     req.success (response)=>
       @scope.businesses = response.entities

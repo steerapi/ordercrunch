@@ -1,3 +1,7 @@
+# moment =require "moment"
+# console.log moment().days()
+# process.exit()
+
 express = require("express")
 app = express()
 app.configure ->
@@ -58,6 +62,9 @@ UserAPI.register app, requiresLogin
 
 ApigeeAPI = require "./apis/apigee"
 ApigeeAPI.register app, requiresLogin
+
+PricingAPI = require "./apis/pricing"
+PricingAPI.register app, requiresLogin
 
 # 
 # req = http.request 
@@ -252,6 +259,17 @@ ApigeeAPI.register app, requiresLogin
 #     schedulecb()
 #   , ->
 #     donecb?()
+
+# console.log i2t(2)
+
+
+# require('date-utils')
+# d = new Date()
+# time = d.getTime()
+# d.add
+#   weeks: -1
+# time = d.getTime()
+# console.log time
 
 app.listen app.get("port"), ->
   console.log "Express server listening on port " + app.get("port")

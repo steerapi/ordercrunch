@@ -4213,7 +4213,7 @@ require.define("/coffee/controller.coffee",function(require,module,exports,__dir
         _this = this;
       this.scope.error = "";
       params = querystring.stringify({
-        ql: "select * where businessName contains '" + this.scope.searchTxt + "'"
+        ql: "select * where businessName contains '" + this.scope.searchTxt + "*'"
       });
       req = this.http.get("" + backendurl + "/apigee/api/v1/businesses?" + params);
       req.success(function(response) {

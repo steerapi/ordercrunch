@@ -247,12 +247,14 @@ class SettingsCtrl
 SettingsCtrl.$inject = ["$scope", "BusinessModel", "$http", "Model"]
 app.controller("SettingsCtrl", SettingsCtrl)
 
+moment = require "moment"
 class OrdersCtrl
   archive: (order, index)=>
     order.status = "archived"
     # order = @scope.completed.splice index,1
   complete: (order, index)=>
     order.status = "completed"
+    order.completedAt = moment.unix()
     order = @scope.incoming.splice index,1
     @scope.completed.push order
   constructor: (@scope,@bmodel,@http, CModel)->

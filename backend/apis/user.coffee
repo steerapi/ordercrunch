@@ -1,6 +1,7 @@
 Usergrid = require "../usergrid"
-postOrders = (businessuuid, orderuuid, cb)->
-  query = new Usergrid.Query "POST", "/businesses/#{businessuuid}/orders/#{orderuuid}", null, null, (output) ->
+async = require "async"
+postOrders = (collection,uuid, orderuuid, cb)->
+  query = new Usergrid.Query "POST", "/#{collection}/#{uuid}/orders/#{orderuuid}", null, null, (output) ->
     cb null
   , ->
     cb "error"
@@ -30,8 +31,20 @@ createOrder = (data, cb)->
 
 exports.register = (app,requiresLogin)->
   # 6. Post Orders to businesses
-  app.post "/api/v1/orders", requiresLogin, (req,res)->
-    orderUUID = req.body.order.uuid
-    businessUUID = req.body.business.uuid
-    postOrders businessUUID, orderUUID, ->
-      res.send 200
+  app.post "/api/v1/orders", (req,res)->
+    query = new Usergrid.Query "POST", "orders", req.body, null, (response) ->
+      order = response.entities[0]
+      async.parallel [ (cb)->
+        postOrders "customers",req.body.from.uuid, order.uuid, ->
+          cb()            
+      , (cb)->
+        postOrders "businesses",req.body.to.uuid, order.uuid, ->
+          cb()
+      ], ->
+        res.send order
+    , ->
+      res.send 404
+    Usergrid.ApiClient.runAppQuery query
+
+    
+    

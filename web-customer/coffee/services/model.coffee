@@ -68,7 +68,7 @@ app.service "Model", EntityModelFactory
 async = require "async"
 CollectionModelFactory = ($http, $parse, $entity)->
   class CollectionModel
-    constructor: (@baseurl, @fromCollection, @fromId, @toCollection, @ql, @idprop="uuid")->
+    constructor: (@baseurl, @fromCollection, @fromId, @toCollection, @ql, @idprop="uuid", @readonly="false")->
       if @fromId and @toCollection
         @path = "/#{@fromCollection}/#{@fromId}/#{@toCollection}"
       else

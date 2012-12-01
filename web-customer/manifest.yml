@@ -3,7 +3,7 @@ applications:
   .: 
     infra: aws
     command: node app.js
-    name: ordercrunch-employee
+    name: ordercrunch-customer
     framework: 
       name: standalone
       info: 

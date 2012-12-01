@@ -2,6 +2,8 @@ Usergrid = require "../usergrid"
 _s = require "underscore.string"
 async = require "async"
 http = require("http")
+format = require "./format"
+formatTime = format.formatTime
 
 getBusiness = (businessUUID, cb)->
   entity = new Usergrid.Entity("businesses")
@@ -34,6 +36,7 @@ saveMenu = (menu, cb)->
   , ->
     cb "error"
 
+moment = require "moment"
 saveBusiness = (businessObj, cb)->
   entity = new Usergrid.Entity "businesses"
   clone = require('clone')
@@ -43,7 +46,11 @@ saveBusiness = (businessObj, cb)->
       for hour,i in hours        
         sps = hour.split("-")
         open = _s(sps[0]).trim()
+        open = moment(open, "HH:mm:ss")
+        open = open.format formatTime
         close = _s(sps[1]).trim()
+        close = moment(close, "HH:mm:ss")
+        close = close.format formatTime
         hours[i] = [open,close]
   tmp.businessName = tmp.name
   delete tmp.name

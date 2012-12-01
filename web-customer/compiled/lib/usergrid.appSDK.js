@@ -1037,7 +1037,7 @@ Usergrid.SDK_VERSION = '0.9.9';
    *  @param {function} errorCallback
    *  @return none
    */
-  Usergrid.Collection.prototype.get = function (successCallback, errorCallback){
+  Usergrid.Collection.prototype.fetch = function (successCallback, errorCallback){
     var self = this;
     var queryParams = this.getQueryParams();
     //empty the list

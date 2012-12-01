@@ -2,6 +2,9 @@
 #   $.extend $.mobile.datebox.prototype.options,
 #     dateFormat: "dd/YYYY"
 #     headerFormat: "dd/YYYY"
+$ ->
+  $.extend $.mobile.datebox::options,
+    overrideTimeFormat: "HH.mm"
 
 $("#pageLogin").on "pageinit", ->
   console.log "init"
