@@ -1,5 +1,5 @@
 DateUtils = require('date-utils')
-graphs = require './graphs'
+# graphs = require './graphs'
 moment = require 'moment'
 # console.log moment
 format = require "../../backend/apis/format"
@@ -142,17 +142,18 @@ class MenuCtrl
       return
     @scope.order.push
       from:
-        customerName: customer._data.name
+        customerName: customer._data.customerName
+        username: user._data.username
         uuid: customer._data.uuid
         phone: customer._data.phone
-        email: customer._data.email
+        email: user._data.email
       to:
         businessName: @model.selected.businessName
         uuid: @model.selected.uuid
       interval: interval
       pickupAt: time
       items: items
-      orderedAt: moment.unix()
+      orderedAt: moment().unix()
       total: @scope.total
       discount: @model.selected.discount
       status: "ordered"

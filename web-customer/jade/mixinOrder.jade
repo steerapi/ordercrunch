@@ -3,10 +3,7 @@ mixin Order()
   div
     li(class="ui-field-contain ui-body ui-br ui-li ui-li-static ui-btn-up-c",data-icon="false",data-role="fieldcontain")
       .ui-body
-        h1 ID: {{order.uuid}}
-        h2 From: {{order.to.businessName}}
-        p {{order.from.phone}}
-        p {{order.from.email}}
+        include ../../shared/jade/orderInfo
         p Ready at {{order.pickupAt}}
     li(class="ui-field-contain ui-body ui-br ui-li ui-btn-up-c",data-icon="false",ng-repeat="item in order.items",data-role="fieldcontain")
       div(href="", ng-click="menuCtrl.addItem(item)")

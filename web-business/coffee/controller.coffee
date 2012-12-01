@@ -7,7 +7,7 @@ class AccountCtrl
     @scope.username = ""
     @scope.password = ""
     @scope.email = ""
-    @model.getBusiness uuid, (business)->
+    @model.get uuid, (business)->
       # console.log business
       # verified = business.get "verified"
       # if verified != "verified"
@@ -111,7 +111,7 @@ class ClaimCtrl
     @scope.$on "pageVerifying", =>
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
-      @bmodel.getBusiness uuid, (business)=>
+      @bmodel.get uuid, (business)=>
         @scope.business = business._data
         uuid = business._data.uuid
         @scope.deregfn?()
@@ -126,7 +126,7 @@ app.controller("ClaimCtrl", ClaimCtrl)
 class CreateBusinessCtrl
   createBusiness: =>
     user = Usergrid.ApiClient.getLoggedInUser()
-    @model.createBusiness user.get("uuid"), @scope.data, ->
+    @model.create user.get("uuid"), @scope.data, ->
       $.mobile.changePage "#pageHome"
     , ->
       @scope.error = "Error trying to create business."
@@ -173,7 +173,7 @@ class TimeCtrl
     @scope.$on "pageTime", =>
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
-      @bmodel.getBusiness uuid, (business)=>
+      @bmodel.get uuid, (business)=>
         @scope.business = business._data
         uuid = business._data.uuid
         @scope.deregfn1?()
@@ -199,7 +199,8 @@ class HomeCtrl
     @scope.$on "pageHome", =>
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
-      @model.getBusiness uuid, (business)=>
+      @model.get uuid, (business)=>
+        console.log "BUSINESS", business
         console.log business.get "businessName"
         @scope.businessName = business.get "businessName"
         @scope.$apply()
@@ -237,7 +238,7 @@ class SettingsCtrl
     @scope.$on "pageSettings", =>
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
-      @bmodel.getBusiness uuid, (business)=>
+      @bmodel.get uuid, (business)=>
         @scope.business = business._data
         uuid = business._data.uuid
         @scope.deregfn?()
@@ -254,7 +255,7 @@ class OrdersCtrl
     # order = @scope.completed.splice index,1
   complete: (order, index)=>
     order.status = "completed"
-    order.completedAt = moment.unix()
+    order.completedAt = moment().unix()
     order = @scope.incoming.splice index,1
     @scope.completed.push order
   constructor: (@scope,@bmodel,@http, CModel)->
@@ -263,7 +264,7 @@ class OrdersCtrl
     @scope.$on "pageOrders", =>
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
-      @bmodel.getBusiness uuid, (business)=>
+      @bmodel.get uuid, (business)=>
         buuid = business.get "uuid"
         @ordersCModel?.unbind()
         @ordersCModel = new CModel("#{backendurl}/api/v1", "businesses", buuid, "orders", "select * where status='ordered' order by created desc")
@@ -360,7 +361,7 @@ class EmployeesCtrl
     @scope.$on "pageEmployees", =>
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
-      @bmodel.getBusiness uuid, (business)=>
+      @bmodel.get uuid, (business)=>
         @scope.business = business
         buuid = business.get "uuid"
         @employeesCModel?.unbind()
@@ -418,7 +419,7 @@ class MenuCtrl
     @scope.$on "pageSection", =>
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
-      @bmodel.getBusiness uuid, (business)=>
+      @bmodel.get uuid, (business)=>
         suuid = @scope.section.uuid
         @itemsCModel?.unbind()
         @itemsCModel = new CModel("#{backendurl}/api/v1", "sections", suuid, "items")
@@ -428,7 +429,7 @@ class MenuCtrl
     @scope.$on "pageSectionSelect", =>
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
-      @bmodel.getBusiness uuid, (business)=>
+      @bmodel.get uuid, (business)=>
         muuid = @scope.menu.uuid
         @sectionsCModel?.unbind()
         @sectionsCModel = new CModel("#{backendurl}/api/v1", "menus", muuid, "sections")
@@ -438,7 +439,7 @@ class MenuCtrl
     @scope.$on "pageMenu", =>
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
-      @bmodel.getBusiness uuid, (business)=>
+      @bmodel.get uuid, (business)=>
         buuid = business.get "uuid"
         @menusCModel?.unbind()
         @menusCModel = new CModel("#{backendurl}/api/v1", "businesses", buuid, "menus")
