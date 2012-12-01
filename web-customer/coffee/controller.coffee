@@ -48,6 +48,8 @@ class EatNowCtrl extends EatCtrl
     hr = day.hours()
     min = day.minutes()
     interval = (hr*4)+(Math.floor min/15)
+    @scope.interval = interval
+    @scope.time = i2t(interval)
     params = querystring.stringify
       name: @scope.searchTxt
       interval: interval
@@ -60,6 +62,8 @@ class EatNowCtrl extends EatCtrl
     # super.search()
   select: (business)=>
     @model.selected = business
+    @model.selected.time = @scope.time
+    @model.selected.interval = @scope.interval
     $.mobile.changePage "#pageMenu"
   constructor: (@scope,@model,@http)->
     @scope.search = _.throttle @search, 1000
@@ -85,6 +89,8 @@ class EatLaterCtrl extends EatCtrl
     hr = day.hours()
     min = day.minutes()
     interval = (hr*4)+(Math.floor min/15)
+    @scope.interval = interval
+    @scope.time = i2t(interval)
     params = querystring.stringify
       name: @scope.searchTxt
       interval: interval
@@ -97,6 +103,8 @@ class EatLaterCtrl extends EatCtrl
     # super.search()
   select: (business)=>
     @model.selected = business
+    @model.selected.time = @scope.time
+    @model.selected.interval = @scope.interval
     $.mobile.changePage "#pageMenu"
   constructor: (@scope,@model,@http)->
     # console.log "SEARCH FUNC", @search
@@ -115,9 +123,14 @@ class MenuCtrl
     @scope.order = []
     $.mobile.changePage "#pageHome"
   confirm: =>
-    now = moment()
-    time = t2i(now.format(formatTime))
-    console.log "time", time
+    $.mobile.loading "show"
+    # now = moment()
+    # time = now.format(formatTime)
+    # interval = t2i(time)
+    # console.log "time", time
+    time = @model.selected.time
+    interval = @model.selected.interval
+    
     user = Usergrid.ApiClient.getLoggedInUser()
     @scope.order = []
     items = []
@@ -136,7 +149,8 @@ class MenuCtrl
       to:
         businessName: @model.selected.businessName
         uuid: @model.selected.uuid
-      interval: time
+      interval: interval
+      pickupAt: time
       items: items
       orderedAt: moment.unix()
       total: @scope.total
@@ -146,7 +160,9 @@ class MenuCtrl
     req.success (order)=>
       @scope.order = [order]
       $.mobile.changePage "#pageConfirm"
+      $.mobile.loading "hide"
     req.error =>
+      $.mobile.loading "hide"
       @scope.error = "Error processing your order. Please try again"
   checkout: =>
     $.mobile.changePage "#pageReview"

@@ -392,7 +392,7 @@ process.binding = function (name) {
 });
 
 require.define("/coffee/controller.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
-  var BusinessSlideCtrl, EmployeeSlideCtrl;
+  var BusinessSlideCtrl, CustomerSlideCtrl, EmployeeSlideCtrl;
 
   BusinessSlideCtrl = function($scope, $timeout) {
     var repeat;
@@ -421,6 +421,20 @@ require.define("/coffee/controller.coffee",function(require,module,exports,__dir
   };
 
   app.controller("EmployeeSlideCtrl", EmployeeSlideCtrl);
+
+  CustomerSlideCtrl = function($scope, $timeout) {
+    var repeat;
+    $scope.current = 0;
+    $scope.ids = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    repeat = function() {
+      $scope.current = ($scope.current + 1) % $scope.ids.length;
+      setTimeout(repeat, 2000);
+      return $scope.$apply();
+    };
+    return setTimeout(repeat, 2000);
+  };
+
+  app.controller("CustomerSlideCtrl", CustomerSlideCtrl);
 
 }).call(this);
 

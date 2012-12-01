@@ -1,19 +1,14 @@
 include navbar
 .container
   .row
-    .span4.align-center
-      //- a(href="http://customer.ordercrunchapp.com")
-      a
+    .span4.align-center(ng-controller="CustomerSlideCtrl")
+      a(href="http://customer.ordercrunchapp.com")
         .row
           .span4.align-center
             div
               div(style="position:relative;")
-                div(style="position:absolute;top:200px;left:88px")
-                  p.lead Coming Soon
-                //- - var ids = [1,2,3,4]
-                //- - each id, key in ids
-                //-   div(style="position:absolute;top:76px;left:55px")
-                //-     img(src="img/customer#{id}.png")
+                div(ng-show="id==ids[current]",ng-repeat="id in ids",style="position:absolute;top:76px;left:55px")
+                  img(ng-src="img/customer/customer{{id}}.png",style="width:193px;height:290px")
                 img(src="img/iphone.png")
         .row
           .span4
@@ -24,8 +19,8 @@ include navbar
           .span4.align-center
             div
               div(style="position:relative;")
-                div(style="position:absolute;top:76px;left:55px")
-                  img(ng-src="img/business/business{{ids[current]}}.png",style="width:193px;height:290px")
+                div(ng-show="id==ids[current]",ng-repeat="id in ids", style="position:absolute;top:76px;left:55px")
+                  img(ng-src="img/business/business{{id}}.png",style="width:193px;height:290px")
                 img(src="img/iphone.png")
         .row
           .span4
@@ -37,8 +32,8 @@ include navbar
           .span4.align-center
             div
               div(style="position:relative;")
-                div(style="position:absolute;top:76px;left:55px")
-                  img(ng-src="img/employee/employee{{ids[current]}}.png",style="width:193px;height:290px")
+                div(ng-show="id==ids[current]",ng-repeat="id in ids",style="position:absolute;top:76px;left:55px")
+                  img(ng-src="img/employee/employee{{id}}.png",style="width:193px;height:290px")
                 img(src="img/iphone.png")
         .row
           .span4

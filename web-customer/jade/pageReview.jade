@@ -11,7 +11,7 @@ div(data-role='content',data-theme="c")
           div {{menuCtrl.carts[item.uuid].qty}} {{item.itemName}} 
         div(style="float:right;")
           div ${{item.price}}
-      a(data-theme="a")
+      a(data-theme="a", ng-click="menuCtrl.removeItem(item)")
     li(data-icon="false",data-role="fieldcontain")
       a(href="")
         div(style="float:left;white-space:normal;")

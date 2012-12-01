@@ -4149,6 +4149,8 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
       hr = day.hours();
       min = day.minutes();
       interval = (hr * 4) + (Math.floor(min / 15));
+      this.scope.interval = interval;
+      this.scope.time = i2t(interval);
       params = querystring.stringify({
         name: this.scope.searchTxt,
         interval: interval
@@ -4164,6 +4166,8 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
 
     EatNowCtrl.prototype.select = function(business) {
       this.model.selected = business;
+      this.model.selected.time = this.scope.time;
+      this.model.selected.interval = this.scope.interval;
       return $.mobile.changePage("#pageMenu");
     };
 
@@ -4216,6 +4220,8 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
       hr = day.hours();
       min = day.minutes();
       interval = (hr * 4) + (Math.floor(min / 15));
+      this.scope.interval = interval;
+      this.scope.time = i2t(interval);
       params = querystring.stringify({
         name: this.scope.searchTxt,
         interval: interval
@@ -4231,6 +4237,8 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
 
     EatLaterCtrl.prototype.select = function(business) {
       this.model.selected = business;
+      this.model.selected.time = this.scope.time;
+      this.model.selected.interval = this.scope.interval;
       return $.mobile.changePage("#pageMenu");
     };
 
@@ -4271,11 +4279,11 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
     };
 
     MenuCtrl.prototype.confirm = function() {
-      var customer, items, k, now, req, time, user, v, _ref,
+      var customer, interval, items, k, req, time, user, v, _ref,
         _this = this;
-      now = moment();
-      time = t2i(now.format(formatTime));
-      console.log("time", time);
+      $.mobile.loading("show");
+      time = this.model.selected.time;
+      interval = this.model.selected.interval;
       user = Usergrid.ApiClient.getLoggedInUser();
       this.scope.order = [];
       items = [];
@@ -4300,7 +4308,8 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
           businessName: this.model.selected.businessName,
           uuid: this.model.selected.uuid
         },
-        interval: time,
+        interval: interval,
+        pickupAt: time,
         items: items,
         orderedAt: moment.unix(),
         total: this.scope.total,
@@ -4310,9 +4319,11 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
       req = this.http.post("" + backendurl + "/api/v1/orders", this.scope.order[0]);
       req.success(function(order) {
         _this.scope.order = [order];
-        return $.mobile.changePage("#pageConfirm");
+        $.mobile.changePage("#pageConfirm");
+        return $.mobile.loading("hide");
       });
       return req.error(function() {
+        $.mobile.loading("hide");
         return _this.scope.error = "Error processing your order. Please try again";
       });
     };
@@ -7014,7 +7025,8 @@ require.define("/web-customer/index.coffee",function(require,module,exports,__di
 
   $(function() {
     return $.extend($.mobile.datebox.prototype.options, {
-      overrideTimeFormat: "HH.mm"
+      overrideTimeFormat: "HH.mm",
+      overrideTimeOutput: '%k:%M'
     });
   });
 
@@ -7037,7 +7049,7 @@ require.define("/web-customer/index.coffee",function(require,module,exports,__di
 
   Usergrid.ApiClient.init('ordercrunch', 'ordercrunch');
 
-  window.backendurl = "http://localhost:3000";
+  window.backendurl = "http://backend.ordercrunchapp.com";
 
   window.app = angular.module("app", []);
 

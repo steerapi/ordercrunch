@@ -5293,6 +5293,13 @@ THE SOFTWARE.
 
 require.define("/index.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
 
+  $(function() {
+    return $.extend($.mobile.datebox.prototype.options, {
+      overrideTimeFormat: "HH.mm",
+      overrideTimeOutput: '%k:%M'
+    });
+  });
+
   $("#pageLogin").on("pageinit", function() {
     console.log("init");
     $("#popupReset iframe").attr("width", 0).attr("height", 0);

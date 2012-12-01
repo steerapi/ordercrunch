@@ -5,6 +5,7 @@
 $ ->
   $.extend $.mobile.datebox::options,
     overrideTimeFormat: "HH.mm"
+    overrideTimeOutput: '%k:%M'
 
 $("#pageLogin").on "pageinit", ->
   console.log "init"

@@ -6,9 +6,10 @@ div(data-role='content', data-theme="c")
     li(data-icon="false",data-role="fieldcontain")
       .ui-body
         h1 ID: {{order.uuid}}
-        h2 From: {{order.from.customerName}}
+        h2 From: {{order.to.businessName}}
         p {{order.from.phone}}
         p {{order.from.email}}
+        p Ready at {{order.pickupAt}}
     li(data-icon="false",ng-repeat="item in order.items",data-role="fieldcontain")
       a(href="", ng-click="menuCtrl.addItem(item)")
         div(style="float:left;white-space:normal;")

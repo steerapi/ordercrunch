@@ -7,6 +7,7 @@ mixin Order(name, fnname)
         h2 From: {{order.from.customerName}}
         p {{order.from.phone}}
         p {{order.from.email}}
+        p Pick up at {{order.pickupAt}}    
     li(class="ui-field-contain ui-body ui-br ui-li ui-btn-up-c",data-icon="false",ng-repeat="item in order.items",data-role="fieldcontain")
       div(href="", ng-click="menuCtrl.addItem(item)")
         div(style="float:left;white-space:normal;")

@@ -19,3 +19,14 @@ EmployeeSlideCtrl = ($scope, $timeout)->
   setTimeout repeat,2000
 
 app.controller "EmployeeSlideCtrl", EmployeeSlideCtrl
+
+CustomerSlideCtrl = ($scope, $timeout)->
+  $scope.current = 0
+  $scope.ids = [1..9]
+  repeat = ->
+    $scope.current = ($scope.current + 1) % $scope.ids.length
+    setTimeout repeat,2000
+    $scope.$apply()
+  setTimeout repeat,2000
+
+app.controller "CustomerSlideCtrl", CustomerSlideCtrl
