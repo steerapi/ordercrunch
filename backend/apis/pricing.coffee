@@ -3,8 +3,7 @@ require('date-utils')
 Usergrid = require "../usergrid"
 moment = require "moment"
 format = require "./format"
-formatTime = format.formatTime
-  
+formatTime = format.formatTime  
 formatDate = "MM/DD/YYYY"
 formatDateTime = "MM/DD/YYYYhh:mm"
 async = require "async"
@@ -19,16 +18,9 @@ async = require "async"
 # time.toDate().between st.toDate(), et.toDate()
 
 # Given "HH:MMA" make interval
-t2i = (time)->
-  day = moment(time,formatTime)
-  hr = day.hours()
-  min = day.minutes()
-  (hr*4)+(Math.floor min/15)
-
-i2t = (interval)->
-  a = moment().sod()
-  a.add('minutes', interval*15)
-  a.format(formatTime)
+tiit = require "./tiit"
+t2i = tiit.t2i
+i2t = tiit.i2t
 
 # moment = require "moment"
 # day = moment("01/26/201210:12 PM",formatDateTime)
@@ -42,21 +34,24 @@ getPastOrders = (buuid, interval, scb,ecb)->
   d = new Date()
   d.add
     days: -30
-  time = d.getTime()
+  time = d.getTime()/1000
+  # console.log interval, buuid
+  # buuid = "855*"
+  # interval = 84
   params = 
-    ql: "select * where orderedAt > #{time} and to.uuid = '#{buuid}' and interval = #{interval}"
+    ql: "select * where orderedAt > #{time} and to.uuid contains '#{buuid}' and interval eq #{interval}"
     limit: 1000
-  query = new Usergrid.Query "GET", "orders", null, params, scb, ecb
+  query = new Usergrid.Query "GET", "/orders", null, params, scb, ecb
   Usergrid.ApiClient.runAppQuery query
 
 getPredictedAvgTime = (business, interval, cb)->
   console.log "getPredictedAvgTime", arguments
   prepBusiness business, (err,buuid,business)->
-    #console.log "getPredictedAvgTime", arguments
+    console.log "getPredictedAvgTime -> prepBusiness", arguments
     buuid = business._data.uuid
     (cb err;return) if err
     getPastOrders buuid, interval, (response)->
-      console.log "getPredictedAvgTime", arguments
+      console.log "getPredictedAvgTime -> getPastOrders", arguments
       orders = response.entities
       totaltime = 0
       totalOrders = orders.length
@@ -64,18 +59,18 @@ getPredictedAvgTime = (business, interval, cb)->
         if order.orderedAt and order.completedAt
           tstart = moment.unix order.orderedAt
           tend = moment.unix order.completedAt
-          totaltime += tend.diff tstart, 'minutes'
+          totaltime += tend.diff(tstart, 'minutes')
         else
           totalOrders--
       avgtime = totaltime/totalOrders
-      suggest business
+      suggest business,
         avgtime: avgtime
       # if have enough data
       predicted = null
-      if orders.length > 100
+      if orders.length > 0 && totalOrders > 0
         predicted = avgtime
       else
-        predicted = business._data.avgtime
+        predicted = parseFloat(business._data.avgtime)
       cb null,predicted
     ,->
       cb "error"
@@ -101,10 +96,10 @@ getPredictedOrders = (business, interval, cb)->
       ####################################
       # if have enough data
       predicted = null
-      if orders.length > 100
+      if orders.length > 0
         predicted = avgpast
       else
-        predicted = 0.5*business._data.maxorders
+        predicted = 0 #0.5*parseFloat(business._data.maxorders)
       cb null, predicted
     , ->
       cb "error"
@@ -127,6 +122,7 @@ isOpen = (business)->
   return open
   
 prepBusiness = (business, cb)->
+  console.log "prepBusiness", arguments
   if not business
     cb "error"
   # console.log "prepBusiness", arguments
@@ -184,15 +180,15 @@ getInfraOrderCapacity = (business, interval, cb)->
   console.log "getInfraOrderCapacity", arguments
   prepBusiness business, (err,buuid,business)->
     (cb err;return) if err
-    cb null, business._data.maxorders
+    cb null, parseFloat(business._data.maxorders)
 
 getLaborCapacity = (business, interval, cb)->
   console.log "getLaborCapacity", arguments
   prepBusiness business, (err,buuid,business)->
     (cb err;return) if err
-    maxemployee = business._data.maxemployee
+    maxemployee = parseFloat(business._data.maxemployee)
     totaltime = 15 # in min
-    avgtime = business._data.avgtime # in min
+    avgtime = parseFloat(business._data.avgtime) # in min
     console.log "maxemployee", maxemployee
     getCurrentEmployees business,interval,(err,currentemployee)->
       (cb err;return) if err
@@ -244,7 +240,7 @@ getCurrentEmployees = (business, inte, cb)->
         if present
           count++
       if count==0
-        count = business._data.maxemployee
+        count = parseFloat(business._data.maxemployee)
       cb(null, count)
 
 _ = require "underscore"
@@ -282,19 +278,20 @@ getDiscount = (business, interval, cb)->
         console.log "cap",capacity
         console.log "pred",predicted
         u = predicted/capacity
-        max = business._data.maxdiscount
+        max = parseFloat(business._data.maxdiscount)
         #linear discount function
         d = -max*u+max
         console.log "max:",max
         console.log "U:",u
-        console.log "D:",d
-        cb null, Math.min max,Math.max(d,0), business
+        console.log "D:",d,"xx"
+        cb null, Math.min(max,Math.max(d,0)), business
 
 # getDiscount "1a370b02-3983-11e2-87fc-02e81ac5a17b", 10, (err,discount)->
 #   console.log "DISCOUNT", discount
 
 exports.register = (app,requiresLogin)->
   app.get "/api/v1/discounts", (req,res)->
+    # console.log req.query.interval
     name = req.query.name
     inte = req.query.interval
     params = 
@@ -302,15 +299,16 @@ exports.register = (app,requiresLogin)->
     scb = (response)->
       console.log response
       discounts = []
-      d = 0
+      # d = 0
       async.forEachSeries response.entities, (entity, cb)->
         prepBusiness entity.uuid, (err,buuid,business)->
           (cb err;return) if err
           getDiscount business, inte, (err, dval)->
             if err
               dval = 0
+            console.log dval
             discount =  
-              discount: d+=10
+              discount: dval.toFixed(2)
             _.extend discount, business._data
             discounts.push discount
             cb()

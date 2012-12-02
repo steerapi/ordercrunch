@@ -4,6 +4,6 @@ div(data-role='header', data-position='fixed', data-tap-toggle='false', data-upd
   h1 Previous Orders
 div(data-role='content', data-theme="c")
   ul.collapsible-list(data-role='listview', data-filter='true', data-inset="true")
-    div(data-role="collapsible", ng-repeat="order in orders")
+    div(ng-show="order.status=='ordered'",data-role="collapsible", ng-repeat="order in orders")
       mixin Order()
       div     

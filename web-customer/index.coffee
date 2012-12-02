@@ -9,3 +9,4 @@ require "../shared/coffee/services/model.coffee"
 
 require "./coffee/services/customerModel.coffee"
 require "./coffee/controller.coffee"
+

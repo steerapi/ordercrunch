@@ -408,7 +408,7 @@ require.define("/shared/coffee/config.coffee",function(require,module,exports,__
 
   Usergrid.ApiClient.init('ordercrunch', 'ordercrunch');
 
-  window.backendurl = "http://localhost:3000";
+  window.backendurl = "http://backend.ordercrunchapp.com";
 
   window.app = angular.module("app", []);
 
@@ -1226,7 +1226,13 @@ require.define("/shared/coffee/services/pageChange.coffee",function(require,modu
       var _this = this;
       this.rootScope = rootScope;
       $(document).bind("pagechange", function(e, obj) {
-        _this.rootScope.$broadcast(obj.toPage[0].id);
+        var from, to;
+        if (obj.options.fromPage) {
+          from = obj.options.fromPage[0].id;
+          _this.rootScope.$broadcast("" + from + "Exit");
+        }
+        to = obj.toPage[0].id;
+        _this.rootScope.$broadcast("" + to);
         return _this.rootScope.$apply();
       });
     }
@@ -4111,83 +4117,43 @@ function lastBraceInKey(str) {
 });
 
 require.define("/web-employee/coffee/controller.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
-  var AccountCtrl, DateUtils, EmployeesCtrl, HomeCtrl, JoinCtrl, NavigatorCtrl, OpenShiftsCtrl, SettingsCtrl, async, querystring, _,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  var AccountCtrl, DateUtils, EmployeesCtrl, HomeCtrl, JoinCtrl, NavigatorCtrl, OpenShiftsCtrl, SettingsCtrl, SuperAccount, SuperSettings, async, querystring, _,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   DateUtils = require('date-utils');
 
-  AccountCtrl = (function() {
+  querystring = require("querystring");
+
+  _ = require("underscore");
+
+  async = require("async");
+
+  SuperAccount = require("../../shared/coffee/controller/SuperAccount");
+
+  AccountCtrl = (function(_super) {
+
+    __extends(AccountCtrl, _super);
 
     AccountCtrl.prototype.proceed = function() {
-      var user, uuid;
-      user = Usergrid.ApiClient.getLoggedInUser();
-      uuid = user != null ? user.get("uuid") : void 0;
-      this.scope.username = "";
-      this.scope.password = "";
-      this.scope.email = "";
+      AccountCtrl.__super__.proceed.call(this);
       return $.mobile.changePage("#pageHome");
     };
 
     function AccountCtrl(scope, model, http, auth) {
-      var _this = this;
       this.scope = scope;
       this.model = model;
       this.http = http;
       this.auth = auth;
       this.proceed = __bind(this.proceed, this);
 
-      this.scope.login = function() {
-        _this.scope.error = "";
-        return _this.auth.logIn(_this.scope.username, _this.scope.password, function(err) {
-          if (err) {
-            return _this.scope.error = "Cannot login. Please try again.";
-          } else {
-            return _this.proceed();
-          }
-        });
-      };
-      this.scope.signup = function() {
-        _this.scope.error = "";
-        return _this.auth.signUp(_this.scope.username, _this.scope.email, _this.scope.password, function(err) {
-          if (err) {
-            _this.scope.error = "Cannot signup. Please try again.";
-            return _this.scope.$apply();
-          } else {
-            return _this.proceed();
-          }
-        });
-      };
-      this.scope.forgot = function() {
-        var req;
-        $.mobile.loading("show", {
-          text: "Reseting...",
-          textVisible: true,
-          theme: "z",
-          html: ""
-        });
-        _this.scope.error = "";
-        req = _this.http.post("" + backendurl + "/api/v1/resetpw", {
-          email: _this.scope.email
-        });
-        req.success(function() {
-          $.mobile.loading("hide");
-          _this.scope.resetSent = 'true';
-          return $.mobile.changePage("#pageResetSent");
-        });
-        return req.error(function() {
-          $.mobile.loading("hide");
-          return _this.scope.error = "Error reseting password. Please try again.";
-        });
-      };
-      this.scope.$on("pageResetSent", function() {
-        _this.scope.error = "";
-        return _this.scope.resetSent = 'false';
-      });
+      AccountCtrl.__super__.constructor.apply(this, arguments);
     }
 
     return AccountCtrl;
 
-  })();
+  })(SuperAccount);
 
   AccountCtrl.$inject = ["$scope", "EmployeeModel", "$http", "Auth", "PageChange"];
 
@@ -4215,12 +4181,6 @@ require.define("/web-employee/coffee/controller.coffee",function(require,module,
   HomeCtrl.$inject = ["$scope", "Model", "$http"];
 
   app.controller("HomeCtrl", HomeCtrl);
-
-  querystring = require("querystring");
-
-  _ = require("underscore");
-
-  async = require("async");
 
   JoinCtrl = (function() {
 
@@ -4253,11 +4213,14 @@ require.define("/web-employee/coffee/controller.coffee",function(require,module,
     };
 
     JoinCtrl.prototype.join = function(business) {
-      var req,
+      var req, user, uuid,
         _this = this;
+      user = Usergrid.ApiClient.getLoggedInUser();
+      uuid = user.get("uuid");
       req = this.http.post("" + backendurl + "/apigee/api/v1/employees", {
         obj: {
-          businessName: business.businessName
+          businessName: business.businessName,
+          employeeName: user.get("name") || user.get("username")
         }
       });
       this.scope.error = "";
@@ -4276,7 +4239,6 @@ require.define("/web-employee/coffee/controller.coffee",function(require,module,
           });
         };
         linkUE = function(donecb) {
-          var user, uuid;
           user = Usergrid.ApiClient.getLoggedInUser();
           uuid = user.get("uuid");
           return _this.link("users", uuid, "employees", employeeUUID, function(err) {
@@ -4324,17 +4286,11 @@ require.define("/web-employee/coffee/controller.coffee",function(require,module,
   NavigatorCtrl = (function() {
 
     function NavigatorCtrl(scope, model, http, auth) {
-      var req,
-        _this = this;
+      var _this = this;
       this.scope = scope;
       this.model = model;
       this.http = http;
       this.auth = auth;
-      req = this.http.post("" + backendurl + "/api/v1/login", {
-        username: "tester",
-        password: "tester"
-      });
-      Usergrid.ApiClient.logInAppUser("tester", "tester", function(response, user) {});
       this.scope.logout = function() {
         slidemenu($("#slidemenu"), true);
         return _this.auth.logOut();
@@ -4349,25 +4305,14 @@ require.define("/web-employee/coffee/controller.coffee",function(require,module,
 
   app.controller("NavigatorCtrl", NavigatorCtrl);
 
-  SettingsCtrl = (function() {
+  SuperSettings = require("../../shared/coffee/controller/SuperSettings");
+
+  SettingsCtrl = (function(_super) {
+
+    __extends(SettingsCtrl, _super);
 
     SettingsCtrl.prototype.setPassword = function() {
-      var query, user, useruuid,
-        _this = this;
-      this.scope.passwordSetStatus = "";
-      user = Usergrid.ApiClient.getLoggedInUser();
-      useruuid = user.get("uuid");
-      query = new Usergrid.Query("PUT", "/users/" + useruuid + "/password", {
-        newpassword: this.scope.password,
-        oldpassword: this.scope.oldpassword
-      }, null, function(output) {
-        return _this.scope.passwordSetStatus = "Success";
-      }, function() {
-        return _this.scope.passwordSetStatus = "Error";
-      });
-      Usergrid.ApiClient.runAppQuery(query);
-      this.scope.password = "";
-      return this.scope.oldpassword = "";
+      return SettingsCtrl.__super__.setPassword.call(this, this.scope);
     };
 
     function SettingsCtrl(scope, http, model) {
@@ -4381,7 +4326,7 @@ require.define("/web-employee/coffee/controller.coffee",function(require,module,
 
     return SettingsCtrl;
 
-  })();
+  })(SuperSettings);
 
   SettingsCtrl.$inject = ["$scope", "$http", "Model"];
 
@@ -7214,6 +7159,129 @@ require.define("/web-employee/node_modules/async/lib/async.js",function(require,
     };
 
 }());
+
+});
+
+require.define("/shared/coffee/controller/SuperAccount.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
+  var SuperAccount,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  SuperAccount = (function() {
+
+    SuperAccount.prototype.proceed = function() {
+      this.scope.username = "";
+      this.scope.password = "";
+      return this.scope.email = "";
+    };
+
+    function SuperAccount(scope, model, http, auth) {
+      var _this = this;
+      this.scope = scope;
+      this.model = model;
+      this.http = http;
+      this.auth = auth;
+      this.proceed = __bind(this.proceed, this);
+
+      this.scope.login = function() {
+        _this.scope.error = "";
+        return _this.auth.logIn(_this.scope.username, _this.scope.password, function(err) {
+          if (err) {
+            return _this.scope.error = "Cannot login. Please try again.";
+          } else {
+            return _this.proceed();
+          }
+        });
+      };
+      this.scope.signup = function() {
+        _this.scope.error = "";
+        return _this.auth.signUp(_this.scope.username, _this.scope.email, _this.scope.password, function(err) {
+          if (err) {
+            _this.scope.error = "Cannot signup. Please try again.";
+            return _this.scope.$apply();
+          } else {
+            return _this.proceed();
+          }
+        });
+      };
+      this.scope.forgot = function() {
+        var req;
+        $.mobile.loading("show", {
+          text: "Reseting...",
+          textVisible: true,
+          theme: "z",
+          html: ""
+        });
+        _this.scope.error = "";
+        req = _this.http.post("" + backendurl + "/api/v1/resetpw", {
+          email: _this.scope.email
+        });
+        req.success(function() {
+          $.mobile.loading("hide");
+          _this.scope.resetSent = 'true';
+          return $.mobile.changePage("#pageResetSent");
+        });
+        return req.error(function() {
+          $.mobile.loading("hide");
+          return _this.scope.error = "Error reseting password. Please try again.";
+        });
+      };
+      this.scope.$on("pageResetSent", function() {
+        _this.scope.error = "";
+        return _this.scope.resetSent = 'false';
+      });
+    }
+
+    return SuperAccount;
+
+  })();
+
+  module.exports = SuperAccount;
+
+}).call(this);
+
+});
+
+require.define("/shared/coffee/controller/SuperSettings.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
+  var SuperSettings;
+
+  SuperSettings = (function() {
+
+    SuperSettings.prototype.setPassword = function() {
+      var query, user, useruuid,
+        _this = this;
+      this.scope.passwordSetStatus = "Setting...";
+      user = Usergrid.ApiClient.getLoggedInUser();
+      useruuid = user.get("uuid");
+      query = new Usergrid.Query("PUT", "/users/" + useruuid + "/password", {
+        newpassword: this.scope.password,
+        oldpassword: this.scope.oldpassword
+      }, null, function(output) {
+        _this.scope.passwordSetStatus = "Success";
+        _this.scope.password = "";
+        _this.scope.oldpassword = "";
+        return _this.scope.$apply();
+      }, function() {
+        _this.scope.passwordSetStatus = "Error";
+        _this.scope.password = "";
+        _this.scope.oldpassword = "";
+        return _this.scope.$apply();
+      });
+      return Usergrid.ApiClient.runAppQuery(query);
+    };
+
+    function SuperSettings(scope, http, model) {
+      this.scope = scope;
+      this.http = http;
+      this.model = model;
+    }
+
+    return SuperSettings;
+
+  })();
+
+  module.exports = SuperSettings;
+
+}).call(this);
 
 });
 

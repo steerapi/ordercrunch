@@ -408,7 +408,7 @@ require.define("/shared/coffee/config.coffee",function(require,module,exports,__
 
   Usergrid.ApiClient.init('ordercrunch', 'ordercrunch');
 
-  window.backendurl = "http://localhost:3000";
+  window.backendurl = "http://backend.ordercrunchapp.com";
 
   window.app = angular.module("app", []);
 
@@ -1226,7 +1226,13 @@ require.define("/shared/coffee/services/pageChange.coffee",function(require,modu
       var _this = this;
       this.rootScope = rootScope;
       $(document).bind("pagechange", function(e, obj) {
-        _this.rootScope.$broadcast(obj.toPage[0].id);
+        var from, to;
+        if (obj.options.fromPage) {
+          from = obj.options.fromPage[0].id;
+          _this.rootScope.$broadcast("" + from + "Exit");
+        }
+        to = obj.toPage[0].id;
+        _this.rootScope.$broadcast("" + to);
         return _this.rootScope.$apply();
       });
     }
@@ -4111,7 +4117,7 @@ function lastBraceInKey(str) {
 });
 
 require.define("/web-customer/coffee/controller.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
-  var AccountCtrl, ConfirmCtrl, DateUtils, EatCtrl, EatLaterCtrl, EatNowCtrl, EmployeesCtrl, HomeCtrl, JoinCtrl, MenuCtrl, NavigatorCtrl, OpenShiftsCtrl, OrdersCtrl, SettingsCtrl, async, format, formatDate, formatDateTime, formatTime, i2t, moment, querystring, t2i, _,
+  var AccountCtrl, ConfirmCtrl, DateUtils, EatCtrl, EatLaterCtrl, EatNowCtrl, HomeCtrl, MenuCtrl, NavigatorCtrl, OrdersCtrl, SettingsCtrl, SuperAccount, SuperSettings, async, format, formatDate, formatDateTime, formatTime, i2t, moment, querystring, t2i, tiit, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -4119,6 +4125,12 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
   DateUtils = require('date-utils');
 
   moment = require('moment');
+
+  querystring = require("querystring");
+
+  _ = require("underscore");
+
+  async = require("async");
 
   format = require("../../backend/apis/format");
 
@@ -4128,20 +4140,11 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
 
   formatDateTime = format.formatDateTime;
 
-  t2i = function(time) {
-    var day, hr, min;
-    day = moment(time, formatTime);
-    hr = day.hours();
-    min = day.minutes();
-    return (hr * 4) + (Math.floor(min / 15));
-  };
+  tiit = require("../../backend/apis/tiit");
 
-  i2t = function(interval) {
-    var a;
-    a = moment().sod();
-    a.add('minutes', interval * 15);
-    return a.format(formatTime);
-  };
+  t2i = tiit.t2i;
+
+  i2t = tiit.i2t;
 
   EatCtrl = (function() {
 
@@ -4149,20 +4152,9 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
 
     EatCtrl.prototype.searchNearby = function() {};
 
-    EatCtrl.prototype.search = function() {};
-
-    return EatCtrl;
-
-  })();
-
-  EatNowCtrl = (function(_super) {
-
-    __extends(EatNowCtrl, _super);
-
-    EatNowCtrl.prototype.search = function() {
+    EatCtrl.prototype.search = function() {
       var day, hr, interval, min, params, req,
         _this = this;
-      this.scope.moment = moment();
       this.scope.error = "";
       if (this.scope.searchTxt === "") {
         this.searchNearby();
@@ -4175,22 +4167,42 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
       this.scope.time = i2t(interval);
       params = querystring.stringify({
         name: this.scope.searchTxt,
-        interval: interval
+        interval: "" + interval
       });
       req = this.http.get("" + backendurl + "/api/v1/discounts?" + params);
       req.success(function(discounts) {
         return _this.scope.businesses = discounts;
       });
       return req.error(function() {
-        return _this.scope.error = "search error";
+        _this.scope.error = "search error";
+        return _this.scope.$apply();
       });
     };
 
-    EatNowCtrl.prototype.select = function(business) {
+    EatCtrl.prototype.select = function(business) {
+      console.log("BUSINESS SELECTED", business);
+      console.log("@scope SELECTED", this.scope);
       this.model.selected = business;
       this.model.selected.time = this.scope.time;
       this.model.selected.interval = this.scope.interval;
       return $.mobile.changePage("#pageMenu");
+    };
+
+    return EatCtrl;
+
+  })();
+
+  EatNowCtrl = (function(_super) {
+
+    __extends(EatNowCtrl, _super);
+
+    EatNowCtrl.prototype.search = function() {
+      this.scope.moment = moment();
+      return EatNowCtrl.__super__.search.call(this);
+    };
+
+    EatNowCtrl.prototype.select = function(business) {
+      return EatNowCtrl.__super__.select.call(this, business);
     };
 
     function EatNowCtrl(scope, model, http) {
@@ -4202,10 +4214,12 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
 
       this.search = __bind(this.search, this);
 
+      $.extend(this.scope, this);
       this.scope.search = _.throttle(this.search, 1000);
-      this.scope.select = this.select;
       this.scope.$on("pageEatNow", function() {
         var user, uuid;
+        _this.scope.searchTxt = "";
+        _this.scope.businesses = [];
         user = Usergrid.ApiClient.getLoggedInUser();
         uuid = user != null ? user.get("uuid") : void 0;
         return _this.model.get(uuid, function(customer) {
@@ -4226,42 +4240,22 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
 
     __extends(EatLaterCtrl, _super);
 
+    EatLaterCtrl.prototype.selectTime = function() {
+      this.scope.searchTxt = "";
+      return this.scope.businesses = [];
+    };
+
     EatLaterCtrl.prototype.search = function() {
-      var day, hr, interval, min, params, req,
-        _this = this;
       if (!this.scope.time) {
         this.scope.error = "Please select time";
         return;
       }
       this.scope.moment = moment(this.scope.time, formatTime);
-      this.scope.error = "";
-      if (this.scope.searchTxt === "") {
-        this.searchNearby();
-      }
-      day = this.scope.moment;
-      hr = day.hours();
-      min = day.minutes();
-      interval = (hr * 4) + (Math.floor(min / 15));
-      this.scope.interval = interval;
-      this.scope.time = i2t(interval);
-      params = querystring.stringify({
-        name: this.scope.searchTxt,
-        interval: interval
-      });
-      req = this.http.get("" + backendurl + "/api/v1/discounts?" + params);
-      req.success(function(discounts) {
-        return _this.scope.businesses = discounts;
-      });
-      return req.error(function() {
-        return _this.scope.error = "search error";
-      });
+      return EatLaterCtrl.__super__.search.call(this);
     };
 
     EatLaterCtrl.prototype.select = function(business) {
-      this.model.selected = business;
-      this.model.selected.time = this.scope.time;
-      this.model.selected.interval = this.scope.interval;
-      return $.mobile.changePage("#pageMenu");
+      return EatLaterCtrl.__super__.select.call(this, business);
     };
 
     function EatLaterCtrl(scope, model, http) {
@@ -4273,10 +4267,14 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
 
       this.search = __bind(this.search, this);
 
+      this.selectTime = __bind(this.selectTime, this);
+
+      $.extend(this.scope, this);
       this.scope.search = _.throttle(this.search, 1000);
-      this.scope.select = this.select;
-      this.scope.$on("pageEatNow", function() {
+      this.scope.$on("pageEatLater", function() {
         var user, uuid;
+        _this.scope.searchTxt = "";
+        _this.scope.businesses = [];
         user = Usergrid.ApiClient.getLoggedInUser();
         uuid = user != null ? user.get("uuid") : void 0;
         return _this.model.get(uuid, function(customer) {
@@ -4296,7 +4294,7 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
   MenuCtrl = (function() {
 
     MenuCtrl.prototype.back = function() {
-      this.scope.order = [];
+      this.clear();
       return $.mobile.changePage("#pageHome");
     };
 
@@ -4322,9 +4320,10 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
       this.scope.order.push({
         from: {
           customerName: customer._data.customerName,
-          username: user._data.username,
+          name: user._data.name,
           uuid: customer._data.uuid,
           phone: customer._data.phone,
+          username: user._data.username,
           email: user._data.email
         },
         to: {
@@ -4369,10 +4368,6 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
       this.scope.totalCount = 0;
       this.scope.total = 0;
       return this.scope.sections = [];
-    };
-
-    MenuCtrl.prototype.back = function() {
-      return $.mobile.changePage("#pageHome");
     };
 
     MenuCtrl.prototype.selectSection = function(section) {
@@ -4421,8 +4416,6 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
       this.removeItem = __bind(this.removeItem, this);
 
       this.selectSection = __bind(this.selectSection, this);
-
-      this.back = __bind(this.back, this);
 
       this.clear = __bind(this.clear, this);
 
@@ -4503,11 +4496,17 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
 
   OrdersCtrl = (function() {
 
+    OrdersCtrl.prototype.archive = function(order, index) {
+      return order.status = "archived";
+    };
+
     function OrdersCtrl(scope, model, http, CModel) {
       var _this = this;
       this.scope = scope;
       this.model = model;
       this.http = http;
+      this.archive = __bind(this.archive, this);
+
       this.scope.complete = this.complete;
       this.scope.archive = this.archive;
       this.scope.$on("pageOrders", function() {
@@ -4515,13 +4514,13 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
         user = Usergrid.ApiClient.getLoggedInUser();
         uuid = user != null ? user.get("uuid") : void 0;
         return _this.model.get(uuid, function(customer) {
-          var cuuid, query;
+          var cuuid, _ref;
           cuuid = customer.get("uuid");
-          query = new Usergrid.Query("GET", "customers/" + cuuid + "/orders", null, null, function(response) {
-            _this.scope.orders = response.entities;
-            return _this.scope.$apply();
-          }, function() {});
-          return Usergrid.ApiClient.runAppQuery(query);
+          if ((_ref = _this.ordersCModel) != null) {
+            _ref.unbind();
+          }
+          _this.ordersCModel = new CModel("" + backendurl + "/api/v1", "customers", cuuid, "orders", "select * where status='ordered' order by created desc");
+          return _this.ordersCModel.bind(_this.scope, "orders");
         });
       });
     }
@@ -4534,78 +4533,30 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
 
   app.controller("OrdersCtrl", OrdersCtrl);
 
-  AccountCtrl = (function() {
+  SuperAccount = require("../../shared/coffee/controller/SuperAccount");
+
+  AccountCtrl = (function(_super) {
+
+    __extends(AccountCtrl, _super);
 
     AccountCtrl.prototype.proceed = function() {
-      var user, uuid;
-      user = Usergrid.ApiClient.getLoggedInUser();
-      uuid = user != null ? user.get("uuid") : void 0;
-      this.scope.username = "";
-      this.scope.password = "";
-      this.scope.email = "";
+      AccountCtrl.__super__.proceed.call(this);
       return $.mobile.changePage("#pageHome");
     };
 
     function AccountCtrl(scope, model, http, auth) {
-      var _this = this;
       this.scope = scope;
       this.model = model;
       this.http = http;
       this.auth = auth;
       this.proceed = __bind(this.proceed, this);
 
-      this.scope.login = function() {
-        _this.scope.error = "";
-        return _this.auth.logIn(_this.scope.username, _this.scope.password, function(err) {
-          if (err) {
-            return _this.scope.error = "Cannot login. Please try again.";
-          } else {
-            return _this.proceed();
-          }
-        });
-      };
-      this.scope.signup = function() {
-        _this.scope.error = "";
-        return _this.auth.signUp(_this.scope.username, _this.scope.email, _this.scope.password, function(err) {
-          if (err) {
-            _this.scope.error = "Cannot signup. Please try again.";
-            return _this.scope.$apply();
-          } else {
-            return _this.proceed();
-          }
-        });
-      };
-      this.scope.forgot = function() {
-        var req;
-        $.mobile.loading("show", {
-          text: "Reseting...",
-          textVisible: true,
-          theme: "z",
-          html: ""
-        });
-        _this.scope.error = "";
-        req = _this.http.post("" + backendurl + "/api/v1/resetpw", {
-          email: _this.scope.email
-        });
-        req.success(function() {
-          $.mobile.loading("hide");
-          _this.scope.resetSent = 'true';
-          return $.mobile.changePage("#pageResetSent");
-        });
-        return req.error(function() {
-          $.mobile.loading("hide");
-          return _this.scope.error = "Error reseting password. Please try again.";
-        });
-      };
-      this.scope.$on("pageResetSent", function() {
-        _this.scope.error = "";
-        return _this.scope.resetSent = 'false';
-      });
+      AccountCtrl.__super__.constructor.apply(this, arguments);
     }
 
     return AccountCtrl;
 
-  })();
+  })(SuperAccount);
 
   AccountCtrl.$inject = ["$scope", "CustomerModel", "$http", "Auth", "PageChange"];
 
@@ -4634,125 +4585,14 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
 
   app.controller("HomeCtrl", HomeCtrl);
 
-  querystring = require("querystring");
-
-  _ = require("underscore");
-
-  async = require("async");
-
-  JoinCtrl = (function() {
-
-    JoinCtrl.prototype.search = function() {
-      var params, req,
-        _this = this;
-      this.scope.error = "";
-      params = querystring.stringify({
-        ql: "select * where businessName contains '" + this.scope.searchTxt + "'"
-      });
-      req = this.http.get("" + backendurl + "/apigee/api/v1/businesses?" + params);
-      req.success(function(response) {
-        return _this.scope.businesses = response.entities;
-      });
-      return req.error(function() {
-        return _this.scope.error = "search error";
-      });
-    };
-
-    JoinCtrl.prototype.link = function(col1, id1, col2, id2, cb) {
-      var req,
-        _this = this;
-      req = this.http.post("" + backendurl + "/apigee/api/v1/" + col1 + "/" + id1 + "/" + col2 + "/" + id2);
-      req.success(function() {
-        return cb();
-      });
-      return req.error(function() {
-        return cb("error");
-      });
-    };
-
-    JoinCtrl.prototype.join = function(business) {
-      var req,
-        _this = this;
-      req = this.http.post("" + backendurl + "/apigee/api/v1/employees", {
-        obj: {
-          businessName: business.businessName
-        }
-      });
-      this.scope.error = "";
-      req.success(function(response) {
-        var employeeData, employeeUUID, linkBE, linkEB, linkUE;
-        employeeData = response.entities[0];
-        employeeUUID = employeeData.uuid;
-        linkEB = function(donecb) {
-          return _this.link("employees", employeeUUID, "businesses", business.uuid, function(err) {
-            return donecb(err);
-          });
-        };
-        linkBE = function(donecb) {
-          return _this.link("businesses", business.uuid, "employees", employeeUUID, function(err) {
-            return donecb(err);
-          });
-        };
-        linkUE = function(donecb) {
-          var user, uuid;
-          user = Usergrid.ApiClient.getLoggedInUser();
-          uuid = user.get("uuid");
-          return _this.link("users", uuid, "employees", employeeUUID, function(err) {
-            return donecb(err);
-          });
-        };
-        return async.parallel([linkUE, linkEB, linkBE], function(err) {
-          if (err) {
-            return this.scope.error = "Error trying to join the business. Please try again.";
-          } else {
-            return $.mobile.changePage("#pageHome");
-          }
-        });
-      });
-      return req.error(function() {
-        return _this.scope.error = "Error trying to join the business. Please try again.";
-      });
-    };
-
-    function JoinCtrl(scope, smodel, http, model) {
-      var _this = this;
-      this.scope = scope;
-      this.smodel = smodel;
-      this.http = http;
-      this.model = model;
-      this.join = __bind(this.join, this);
-
-      this.link = __bind(this.link, this);
-
-      this.search = __bind(this.search, this);
-
-      this.scope.search = _.throttle(this.search, 1000);
-      this.scope.join = this.join;
-      this.scope.$on("pageJoin", function() {});
-    }
-
-    return JoinCtrl;
-
-  })();
-
-  JoinCtrl.$inject = ["$scope", "CustomerModel", "$http", "Model"];
-
-  app.controller("JoinCtrl", JoinCtrl);
-
   NavigatorCtrl = (function() {
 
     function NavigatorCtrl(scope, model, http, auth) {
-      var req,
-        _this = this;
+      var _this = this;
       this.scope = scope;
       this.model = model;
       this.http = http;
       this.auth = auth;
-      req = this.http.post("" + backendurl + "/api/v1/login", {
-        username: "tester",
-        password: "tester"
-      });
-      Usergrid.ApiClient.logInAppUser("tester", "tester", function(response, user) {});
       this.scope.logout = function() {
         slidemenu($("#slidemenu"), true);
         return _this.auth.logOut();
@@ -4767,25 +4607,14 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
 
   app.controller("NavigatorCtrl", NavigatorCtrl);
 
-  SettingsCtrl = (function() {
+  SuperSettings = require("../../shared/coffee/controller/SuperSettings");
+
+  SettingsCtrl = (function(_super) {
+
+    __extends(SettingsCtrl, _super);
 
     SettingsCtrl.prototype.setPassword = function() {
-      var query, user, useruuid,
-        _this = this;
-      this.scope.passwordSetStatus = "";
-      user = Usergrid.ApiClient.getLoggedInUser();
-      useruuid = user.get("uuid");
-      query = new Usergrid.Query("PUT", "/users/" + useruuid + "/password", {
-        newpassword: this.scope.password,
-        oldpassword: this.scope.oldpassword
-      }, null, function(output) {
-        return _this.scope.passwordSetStatus = "Success";
-      }, function() {
-        return _this.scope.passwordSetStatus = "Error";
-      });
-      Usergrid.ApiClient.runAppQuery(query);
-      this.scope.password = "";
-      return this.scope.oldpassword = "";
+      return SettingsCtrl.__super__.setPassword.call(this, this.scope);
     };
 
     function SettingsCtrl(scope, http, model) {
@@ -4799,135 +4628,11 @@ require.define("/web-customer/coffee/controller.coffee",function(require,module,
 
     return SettingsCtrl;
 
-  })();
+  })(SuperSettings);
 
   SettingsCtrl.$inject = ["$scope", "$http", "Model"];
 
   app.controller("SettingsCtrl", SettingsCtrl);
-
-  EmployeesCtrl = (function() {
-
-    EmployeesCtrl.prototype.newShift = function() {
-      var _base, _base1, _name, _name1, _ref, _ref1;
-      if (this.scope.tap === 'default') {
-        if ((_ref = (_base = this.scope.regularHours)[_name = this.scope.dayOfWeek]) == null) {
-          _base[_name] = [];
-        }
-        return this.scope.regularHours[this.scope.dayOfWeek].splice(0, 0, ["", ""]);
-      } else {
-        if ((_ref1 = (_base1 = this.scope.specialHours)[_name1 = this.scope.dateOfYear]) == null) {
-          _base1[_name1] = [];
-        }
-        return this.scope.specialHours[this.scope.dateOfYear].splice(0, 0, ["", ""]);
-      }
-    };
-
-    EmployeesCtrl.prototype.cleanData = function(obj) {
-      var hours, i, k, v, _i, _ref;
-      for (k in obj) {
-        hours = obj[k];
-        if (!k) {
-          delete obj[k];
-          continue;
-        }
-        for (i = _i = _ref = hours.length - 1; _ref <= 0 ? _i <= 0 : _i >= 0; i = _ref <= 0 ? ++_i : --_i) {
-          v = hours[i];
-          if ((!(v != null ? v[0] : void 0)) || (!(v != null ? v[1] : void 0))) {
-            hours.splice(i, 1);
-          }
-        }
-        if (hours.length <= 0) {
-          delete obj[k];
-          continue;
-        }
-      }
-    };
-
-    EmployeesCtrl.prototype.deleteEmployee = function(index) {
-      return this.scope.employees.splice(index, 1);
-    };
-
-    function EmployeesCtrl(scope, smodel, http, model, CModel) {
-      var d,
-        _this = this;
-      this.scope = scope;
-      this.smodel = smodel;
-      this.http = http;
-      this.model = model;
-      this.deleteEmployee = __bind(this.deleteEmployee, this);
-
-      this.cleanData = __bind(this.cleanData, this);
-
-      this.newShift = __bind(this.newShift, this);
-
-      this.scope.deleteEmployee = this.deleteEmployee;
-      this.scope.$on("pageEmployees", function() {
-        var user, uuid, _ref;
-        user = Usergrid.ApiClient.getLoggedInUser();
-        uuid = user != null ? user.get("uuid") : void 0;
-        if ((_ref = _this.employeesCModel) != null) {
-          _ref.unbind();
-        }
-        _this.employeesCModel = new CModel("" + backendurl + "/api/v1", "users", uuid, "employees", null);
-        return _this.employeesCModel.bind(_this.scope, "employees");
-      });
-      d = new Date();
-      this.scope.regularHours = {};
-      this.scope.specialHours = {};
-      this.scope.days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      this.scope.newShift = this.newShift;
-      this.scope.dayOfWeek = d.toFormat("DDDD");
-      this.scope.dateOfYear = d.toFormat("MM/DD/YYYY");
-      this.scope.$on("pageShiftCalendar", function() {
-        var deregcb1, deregcb2, user, uuid, _base, _base1;
-        user = Usergrid.ApiClient.getLoggedInUser();
-        uuid = user != null ? user.get("uuid") : void 0;
-        if (typeof (_base = _this.scope).deregfn1 === "function") {
-          _base.deregfn1();
-        }
-        if (typeof (_base1 = _this.scope).deregfn2 === "function") {
-          _base1.deregfn2();
-        }
-        deregcb1 = function(deregfn) {
-          return _this.scope.deregfn1 = deregfn;
-        };
-        deregcb2 = function(deregfn) {
-          return _this.scope.deregfn2 = deregfn;
-        };
-        _this.model.bind(_this.scope, "regularHours", "" + backendurl + "/api/v1/employees/" + uuid + "/$.regularHours", {}, function(obj) {
-          return _this.cleanData(obj);
-        }, deregcb1);
-        return _this.model.bind(_this.scope, "specialHours", "" + backendurl + "/api/v1/employees/" + uuid + "/$.specialHours", {}, function(obj) {
-          return _this.cleanData(obj);
-        }, deregcb2);
-      });
-      this.scope.newInterval = this.newInterval;
-    }
-
-    return EmployeesCtrl;
-
-  })();
-
-  EmployeesCtrl.$inject = ["$scope", "CustomerModel", "$http", "Model", "CollectionModel"];
-
-  app.controller("EmployeesCtrl", EmployeesCtrl);
-
-  OpenShiftsCtrl = (function() {
-
-    function OpenShiftsCtrl(scope, smodel, http, model, CModel) {
-      this.scope = scope;
-      this.smodel = smodel;
-      this.http = http;
-      this.model = model;
-    }
-
-    return OpenShiftsCtrl;
-
-  })();
-
-  OpenShiftsCtrl.$inject = ["$scope", "CustomerModel", "$http", "Model", "CollectionModel"];
-
-  app.controller("OpenShiftsCtrl", OpenShiftsCtrl);
 
 }).call(this);
 
@@ -6944,18 +6649,6 @@ require.define("/web-customer/node_modules/moment/moment.js",function(require,mo
 
 });
 
-require.define("/backend/apis/format.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
-
-  module.exports = {
-    formatTime: "HH:mm",
-    formatDate: "MM/DD/YYYY",
-    formatDateTime: "MM/DD/YYYYhh:mm"
-  };
-
-}).call(this);
-
-});
-
 require.define("/web-customer/node_modules/underscore/package.json",function(require,module,exports,__dirname,__filename,process,global){module.exports = {"main":"underscore.js"}
 });
 
@@ -8863,6 +8556,2182 @@ require.define("/web-customer/node_modules/async/lib/async.js",function(require,
     };
 
 }());
+
+});
+
+require.define("/backend/apis/format.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
+
+  module.exports = {
+    formatTime: "HH:mm",
+    formatDate: "MM/DD/YYYY",
+    formatDateTime: "MM/DD/YYYYhh:mm"
+  };
+
+}).call(this);
+
+});
+
+require.define("/backend/apis/tiit.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
+  var DateUtils, format, formatTime, moment;
+
+  moment = require("moment");
+
+  DateUtils = require('date-utils');
+
+  format = require("./format");
+
+  formatTime = format.formatTime;
+
+  exports.t2i = function(time) {
+    var day, hr, min;
+    day = moment(time, formatTime);
+    hr = day.hours();
+    min = day.minutes();
+    return (hr * 4) + (Math.floor(min / 15));
+  };
+
+  exports.i2t = function(interval) {
+    var a;
+    a = moment().sod();
+    a.add('minutes', interval * 15);
+    return a.format(formatTime);
+  };
+
+}).call(this);
+
+});
+
+require.define("/backend/node_modules/moment/package.json",function(require,module,exports,__dirname,__filename,process,global){module.exports = {"main":"./moment.js"}
+});
+
+require.define("/backend/node_modules/moment/moment.js",function(require,module,exports,__dirname,__filename,process,global){// moment.js
+// version : 1.7.2
+// author : Tim Wood
+// license : MIT
+// momentjs.com
+
+(function (undefined) {
+
+    /************************************
+        Constants
+    ************************************/
+
+    var moment,
+        VERSION = "1.7.2",
+        round = Math.round, i,
+        // internal storage for language config files
+        languages = {},
+        currentLanguage = 'en',
+
+        // check for nodeJS
+        hasModule = (typeof module !== 'undefined' && module.exports),
+
+        // Parameters to check for on the lang config.  This list of properties
+        // will be inherited from English if not provided in a language
+        // definition.  monthsParse is also a lang config property, but it
+        // cannot be inherited and as such cannot be enumerated here.
+        langConfigProperties = 'months|monthsShort|weekdays|weekdaysShort|weekdaysMin|longDateFormat|calendar|relativeTime|ordinal|meridiem'.split('|'),
+
+        // ASP.NET json date format regex
+        aspNetJsonRegex = /^\/?Date\((\-?\d+)/i,
+
+        // format tokens
+        formattingTokens = /(\[[^\[]*\])|(\\)?(Mo|MM?M?M?|Do|DDDo|DD?D?D?|ddd?d?|do?|w[o|w]?|YYYY|YY|a|A|hh?|HH?|mm?|ss?|SS?S?|zz?|ZZ?|.)/g,
+        localFormattingTokens = /(\[[^\[]*\])|(\\)?(LT|LL?L?L?)/g,
+
+        // parsing tokens
+        parseMultipleFormatChunker = /([0-9a-zA-Z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+)/gi,
+
+        // parsing token regexes
+        parseTokenOneOrTwoDigits = /\d\d?/, // 0 - 99
+        parseTokenOneToThreeDigits = /\d{1,3}/, // 0 - 999
+        parseTokenThreeDigits = /\d{3}/, // 000 - 999
+        parseTokenFourDigits = /\d{1,4}/, // 0 - 9999
+        parseTokenWord = /[0-9a-z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+/i, // any word characters or numbers
+        parseTokenTimezone = /Z|[\+\-]\d\d:?\d\d/i, // +00:00 -00:00 +0000 -0000 or Z
+        parseTokenT = /T/i, // T (ISO seperator)
+
+        // preliminary iso regex
+        // 0000-00-00 + T + 00 or 00:00 or 00:00:00 or 00:00:00.000 + +00:00 or +0000
+        isoRegex = /^\s*\d{4}-\d\d-\d\d(T(\d\d(:\d\d(:\d\d(\.\d\d?\d?)?)?)?)?([\+\-]\d\d:?\d\d)?)?/,
+        isoFormat = 'YYYY-MM-DDTHH:mm:ssZ',
+
+        // iso time formats and regexes
+        isoTimes = [
+            ['HH:mm:ss.S', /T\d\d:\d\d:\d\d\.\d{1,3}/],
+            ['HH:mm:ss', /T\d\d:\d\d:\d\d/],
+            ['HH:mm', /T\d\d:\d\d/],
+            ['HH', /T\d\d/]
+        ],
+
+        // timezone chunker "+10:00" > ["10", "00"] or "-1530" > ["-15", "30"]
+        parseTimezoneChunker = /([\+\-]|\d\d)/gi,
+
+        // getter and setter names
+        proxyGettersAndSetters = 'Month|Date|Hours|Minutes|Seconds|Milliseconds'.split('|'),
+        unitMillisecondFactors = {
+            'Milliseconds' : 1,
+            'Seconds' : 1e3,
+            'Minutes' : 6e4,
+            'Hours' : 36e5,
+            'Days' : 864e5,
+            'Months' : 2592e6,
+            'Years' : 31536e6
+        },
+
+        // format function strings
+        formatFunctions = {},
+
+        // tokens to ordinalize and pad
+        ordinalizeTokens = 'DDD w M D d'.split(' '),
+        paddedTokens = 'M D H h m s w'.split(' '),
+
+        /*
+         * moment.fn.format uses new Function() to create an inlined formatting function.
+         * Results are a 3x speed boost
+         * http://jsperf.com/momentjs-cached-format-functions
+         *
+         * These strings are appended into a function using replaceFormatTokens and makeFormatFunction
+         */
+        formatTokenFunctions = {
+            // a = placeholder
+            // b = placeholder
+            // t = the current moment being formatted
+            // v = getValueAtKey function
+            // o = language.ordinal function
+            // p = leftZeroFill function
+            // m = language.meridiem value or function
+            M    : function () {
+                return this.month() + 1;
+            },
+            MMM  : function (format) {
+                return getValueFromArray("monthsShort", this.month(), this, format);
+            },
+            MMMM : function (format) {
+                return getValueFromArray("months", this.month(), this, format);
+            },
+            D    : function () {
+                return this.date();
+            },
+            DDD  : function () {
+                var a = new Date(this.year(), this.month(), this.date()),
+                    b = new Date(this.year(), 0, 1);
+                return ~~(((a - b) / 864e5) + 1.5);
+            },
+            d    : function () {
+                return this.day();
+            },
+            dd   : function (format) {
+                return getValueFromArray("weekdaysMin", this.day(), this, format);
+            },
+            ddd  : function (format) {
+                return getValueFromArray("weekdaysShort", this.day(), this, format);
+            },
+            dddd : function (format) {
+                return getValueFromArray("weekdays", this.day(), this, format);
+            },
+            w    : function () {
+                var a = new Date(this.year(), this.month(), this.date() - this.day() + 5),
+                    b = new Date(a.getFullYear(), 0, 4);
+                return ~~((a - b) / 864e5 / 7 + 1.5);
+            },
+            YY   : function () {
+                return leftZeroFill(this.year() % 100, 2);
+            },
+            YYYY : function () {
+                return leftZeroFill(this.year(), 4);
+            },
+            a    : function () {
+                return this.lang().meridiem(this.hours(), this.minutes(), true);
+            },
+            A    : function () {
+                return this.lang().meridiem(this.hours(), this.minutes(), false);
+            },
+            H    : function () {
+                return this.hours();
+            },
+            h    : function () {
+                return this.hours() % 12 || 12;
+            },
+            m    : function () {
+                return this.minutes();
+            },
+            s    : function () {
+                return this.seconds();
+            },
+            S    : function () {
+                return ~~(this.milliseconds() / 100);
+            },
+            SS   : function () {
+                return leftZeroFill(~~(this.milliseconds() / 10), 2);
+            },
+            SSS  : function () {
+                return leftZeroFill(this.milliseconds(), 3);
+            },
+            Z    : function () {
+                var a = -this.zone(),
+                    b = "+";
+                if (a < 0) {
+                    a = -a;
+                    b = "-";
+                }
+                return b + leftZeroFill(~~(a / 60), 2) + ":" + leftZeroFill(~~a % 60, 2);
+            },
+            ZZ   : function () {
+                var a = -this.zone(),
+                    b = "+";
+                if (a < 0) {
+                    a = -a;
+                    b = "-";
+                }
+                return b + leftZeroFill(~~(10 * a / 6), 4);
+            }
+        };
+
+    function getValueFromArray(key, index, m, format) {
+        var lang = m.lang();
+        return lang[key].call ? lang[key](m, format) : lang[key][index];
+    }
+
+    function padToken(func, count) {
+        return function (a) {
+            return leftZeroFill(func.call(this, a), count);
+        };
+    }
+    function ordinalizeToken(func) {
+        return function (a) {
+            var b = func.call(this, a);
+            return b + this.lang().ordinal(b);
+        };
+    }
+
+    while (ordinalizeTokens.length) {
+        i = ordinalizeTokens.pop();
+        formatTokenFunctions[i + 'o'] = ordinalizeToken(formatTokenFunctions[i]);
+    }
+    while (paddedTokens.length) {
+        i = paddedTokens.pop();
+        formatTokenFunctions[i + i] = padToken(formatTokenFunctions[i], 2);
+    }
+    formatTokenFunctions.DDDD = padToken(formatTokenFunctions.DDD, 3);
+
+
+    /************************************
+        Constructors
+    ************************************/
+
+
+    // Moment prototype object
+    function Moment(date, isUTC, lang) {
+        this._d = date;
+        this._isUTC = !!isUTC;
+        this._a = date._a || null;
+        this._lang = lang || false;
+    }
+
+    // Duration Constructor
+    function Duration(duration) {
+        var data = this._data = {},
+            years = duration.years || duration.y || 0,
+            months = duration.months || duration.M || 0,
+            weeks = duration.weeks || duration.w || 0,
+            days = duration.days || duration.d || 0,
+            hours = duration.hours || duration.h || 0,
+            minutes = duration.minutes || duration.m || 0,
+            seconds = duration.seconds || duration.s || 0,
+            milliseconds = duration.milliseconds || duration.ms || 0;
+
+        // representation for dateAddRemove
+        this._milliseconds = milliseconds +
+            seconds * 1e3 + // 1000
+            minutes * 6e4 + // 1000 * 60
+            hours * 36e5; // 1000 * 60 * 60
+        // Because of dateAddRemove treats 24 hours as different from a
+        // day when working around DST, we need to store them separately
+        this._days = days +
+            weeks * 7;
+        // It is impossible translate months into days without knowing
+        // which months you are are talking about, so we have to store
+        // it separately.
+        this._months = months +
+            years * 12;
+
+        // The following code bubbles up values, see the tests for
+        // examples of what that means.
+        data.milliseconds = milliseconds % 1000;
+        seconds += absRound(milliseconds / 1000);
+
+        data.seconds = seconds % 60;
+        minutes += absRound(seconds / 60);
+
+        data.minutes = minutes % 60;
+        hours += absRound(minutes / 60);
+
+        data.hours = hours % 24;
+        days += absRound(hours / 24);
+
+        days += weeks * 7;
+        data.days = days % 30;
+
+        months += absRound(days / 30);
+
+        data.months = months % 12;
+        years += absRound(months / 12);
+
+        data.years = years;
+
+        this._lang = false;
+    }
+
+
+    /************************************
+        Helpers
+    ************************************/
+
+
+    function absRound(number) {
+        if (number < 0) {
+            return Math.ceil(number);
+        } else {
+            return Math.floor(number);
+        }
+    }
+
+    // left zero fill a number
+    // see http://jsperf.com/left-zero-filling for performance comparison
+    function leftZeroFill(number, targetLength) {
+        var output = number + '';
+        while (output.length < targetLength) {
+            output = '0' + output;
+        }
+        return output;
+    }
+
+    // helper function for _.addTime and _.subtractTime
+    function addOrSubtractDurationFromMoment(mom, duration, isAdding) {
+        var ms = duration._milliseconds,
+            d = duration._days,
+            M = duration._months,
+            currentDate;
+
+        if (ms) {
+            mom._d.setTime(+mom + ms * isAdding);
+        }
+        if (d) {
+            mom.date(mom.date() + d * isAdding);
+        }
+        if (M) {
+            currentDate = mom.date();
+            mom.date(1)
+                .month(mom.month() + M * isAdding)
+                .date(Math.min(currentDate, mom.daysInMonth()));
+        }
+    }
+
+    // check if is an array
+    function isArray(input) {
+        return Object.prototype.toString.call(input) === '[object Array]';
+    }
+
+    // compare two arrays, return the number of differences
+    function compareArrays(array1, array2) {
+        var len = Math.min(array1.length, array2.length),
+            lengthDiff = Math.abs(array1.length - array2.length),
+            diffs = 0,
+            i;
+        for (i = 0; i < len; i++) {
+            if (~~array1[i] !== ~~array2[i]) {
+                diffs++;
+            }
+        }
+        return diffs + lengthDiff;
+    }
+
+    // convert an array to a date.
+    // the array should mirror the parameters below
+    // note: all values past the year are optional and will default to the lowest possible value.
+    // [year, month, day , hour, minute, second, millisecond]
+    function dateFromArray(input, asUTC, hoursOffset, minutesOffset) {
+        var i, date, forValid = [];
+        for (i = 0; i < 7; i++) {
+            forValid[i] = input[i] = (input[i] == null) ? (i === 2 ? 1 : 0) : input[i];
+        }
+        // we store whether we used utc or not in the input array
+        input[7] = forValid[7] = asUTC;
+        // if the parser flagged the input as invalid, we pass the value along
+        if (input[8] != null) {
+            forValid[8] = input[8];
+        }
+        // add the offsets to the time to be parsed so that we can have a clean array
+        // for checking isValid
+        input[3] += hoursOffset || 0;
+        input[4] += minutesOffset || 0;
+        date = new Date(0);
+        if (asUTC) {
+            date.setUTCFullYear(input[0], input[1], input[2]);
+            date.setUTCHours(input[3], input[4], input[5], input[6]);
+        } else {
+            date.setFullYear(input[0], input[1], input[2]);
+            date.setHours(input[3], input[4], input[5], input[6]);
+        }
+        date._a = forValid;
+        return date;
+    }
+
+    // Loads a language definition into the `languages` cache.  The function
+    // takes a key and optionally values.  If not in the browser and no values
+    // are provided, it will load the language file module.  As a convenience,
+    // this function also returns the language values.
+    function loadLang(key, values) {
+        var i, m,
+            parse = [];
+
+        if (!values && hasModule) {
+            values = require('./lang/' + key);
+        }
+
+        for (i = 0; i < langConfigProperties.length; i++) {
+            // If a language definition does not provide a value, inherit
+            // from English
+            values[langConfigProperties[i]] = values[langConfigProperties[i]] ||
+              languages.en[langConfigProperties[i]];
+        }
+
+        for (i = 0; i < 12; i++) {
+            m = moment([2000, i]);
+            parse[i] = new RegExp('^' + (values.months[i] || values.months(m, '')) +
+                '|^' + (values.monthsShort[i] || values.monthsShort(m, '')).replace('.', ''), 'i');
+        }
+        values.monthsParse = values.monthsParse || parse;
+
+        languages[key] = values;
+
+        return values;
+    }
+
+    // Determines which language definition to use and returns it.
+    //
+    // With no parameters, it will return the global language.  If you
+    // pass in a language key, such as 'en', it will return the
+    // definition for 'en', so long as 'en' has already been loaded using
+    // moment.lang.  If you pass in a moment or duration instance, it
+    // will decide the language based on that, or default to the global
+    // language.
+    function getLangDefinition(m) {
+        var langKey = (typeof m === 'string') && m ||
+                      m && m._lang ||
+                      null;
+
+        return langKey ? (languages[langKey] || loadLang(langKey)) : moment;
+    }
+
+
+    /************************************
+        Formatting
+    ************************************/
+
+
+    function removeFormattingTokens(input) {
+        if (input.match(/\[.*\]/)) {
+            return input.replace(/^\[|\]$/g, "");
+        }
+        return input.replace(/\\/g, "");
+    }
+
+    function makeFormatFunction(format) {
+        var array = format.match(formattingTokens), i, length;
+
+        for (i = 0, length = array.length; i < length; i++) {
+            if (formatTokenFunctions[array[i]]) {
+                array[i] = formatTokenFunctions[array[i]];
+            } else {
+                array[i] = removeFormattingTokens(array[i]);
+            }
+        }
+
+        return function (mom) {
+            var output = "";
+            for (i = 0; i < length; i++) {
+                output += typeof array[i].call === 'function' ? array[i].call(mom, format) : array[i];
+            }
+            return output;
+        };
+    }
+
+    // format date using native date object
+    function formatMoment(m, format) {
+        var i = 5;
+
+        function replaceLongDateFormatTokens(input) {
+            return m.lang().longDateFormat[input] || input;
+        }
+
+        while (i-- && localFormattingTokens.test(format)) {
+            format = format.replace(localFormattingTokens, replaceLongDateFormatTokens);
+        }
+
+        if (!formatFunctions[format]) {
+            formatFunctions[format] = makeFormatFunction(format);
+        }
+
+        return formatFunctions[format](m);
+    }
+
+
+    /************************************
+        Parsing
+    ************************************/
+
+
+    // get the regex to find the next token
+    function getParseRegexForToken(token) {
+        switch (token) {
+        case 'DDDD':
+            return parseTokenThreeDigits;
+        case 'YYYY':
+            return parseTokenFourDigits;
+        case 'S':
+        case 'SS':
+        case 'SSS':
+        case 'DDD':
+            return parseTokenOneToThreeDigits;
+        case 'MMM':
+        case 'MMMM':
+        case 'dd':
+        case 'ddd':
+        case 'dddd':
+        case 'a':
+        case 'A':
+            return parseTokenWord;
+        case 'Z':
+        case 'ZZ':
+            return parseTokenTimezone;
+        case 'T':
+            return parseTokenT;
+        case 'MM':
+        case 'DD':
+        case 'YY':
+        case 'HH':
+        case 'hh':
+        case 'mm':
+        case 'ss':
+        case 'M':
+        case 'D':
+        case 'd':
+        case 'H':
+        case 'h':
+        case 'm':
+        case 's':
+            return parseTokenOneOrTwoDigits;
+        default :
+            return new RegExp(token.replace('\\', ''));
+        }
+    }
+
+    // function to convert string input to date
+    function addTimeToArrayFromToken(token, input, datePartArray, config) {
+        var a, b;
+
+        switch (token) {
+        // MONTH
+        case 'M' : // fall through to MM
+        case 'MM' :
+            datePartArray[1] = (input == null) ? 0 : ~~input - 1;
+            break;
+        case 'MMM' : // fall through to MMMM
+        case 'MMMM' :
+            for (a = 0; a < 12; a++) {
+                if (getLangDefinition().monthsParse[a].test(input)) {
+                    datePartArray[1] = a;
+                    b = true;
+                    break;
+                }
+            }
+            // if we didn't find a month name, mark the date as invalid.
+            if (!b) {
+                datePartArray[8] = false;
+            }
+            break;
+        // DAY OF MONTH
+        case 'D' : // fall through to DDDD
+        case 'DD' : // fall through to DDDD
+        case 'DDD' : // fall through to DDDD
+        case 'DDDD' :
+            if (input != null) {
+                datePartArray[2] = ~~input;
+            }
+            break;
+        // YEAR
+        case 'YY' :
+            datePartArray[0] = ~~input + (~~input > 70 ? 1900 : 2000);
+            break;
+        case 'YYYY' :
+            datePartArray[0] = ~~Math.abs(input);
+            break;
+        // AM / PM
+        case 'a' : // fall through to A
+        case 'A' :
+            config.isPm = ((input + '').toLowerCase() === 'pm');
+            break;
+        // 24 HOUR
+        case 'H' : // fall through to hh
+        case 'HH' : // fall through to hh
+        case 'h' : // fall through to hh
+        case 'hh' :
+            datePartArray[3] = ~~input;
+            break;
+        // MINUTE
+        case 'm' : // fall through to mm
+        case 'mm' :
+            datePartArray[4] = ~~input;
+            break;
+        // SECOND
+        case 's' : // fall through to ss
+        case 'ss' :
+            datePartArray[5] = ~~input;
+            break;
+        // MILLISECOND
+        case 'S' :
+        case 'SS' :
+        case 'SSS' :
+            datePartArray[6] = ~~ (('0.' + input) * 1000);
+            break;
+        // TIMEZONE
+        case 'Z' : // fall through to ZZ
+        case 'ZZ' :
+            config.isUTC = true;
+            a = (input + '').match(parseTimezoneChunker);
+            if (a && a[1]) {
+                config.tzh = ~~a[1];
+            }
+            if (a && a[2]) {
+                config.tzm = ~~a[2];
+            }
+            // reverse offsets
+            if (a && a[0] === '+') {
+                config.tzh = -config.tzh;
+                config.tzm = -config.tzm;
+            }
+            break;
+        }
+
+        // if the input is null, the date is not valid
+        if (input == null) {
+            datePartArray[8] = false;
+        }
+    }
+
+    // date from string and format string
+    function makeDateFromStringAndFormat(string, format) {
+        // This array is used to make a Date, either with `new Date` or `Date.UTC`
+        // We store some additional data on the array for validation
+        // datePartArray[7] is true if the Date was created with `Date.UTC` and false if created with `new Date`
+        // datePartArray[8] is false if the Date is invalid, and undefined if the validity is unknown.
+        var datePartArray = [0, 0, 1, 0, 0, 0, 0],
+            config = {
+                tzh : 0, // timezone hour offset
+                tzm : 0  // timezone minute offset
+            },
+            tokens = format.match(formattingTokens),
+            i, parsedInput;
+
+        for (i = 0; i < tokens.length; i++) {
+            parsedInput = (getParseRegexForToken(tokens[i]).exec(string) || [])[0];
+            if (parsedInput) {
+                string = string.slice(string.indexOf(parsedInput) + parsedInput.length);
+            }
+            // don't parse if its not a known token
+            if (formatTokenFunctions[tokens[i]]) {
+                addTimeToArrayFromToken(tokens[i], parsedInput, datePartArray, config);
+            }
+        }
+        // handle am pm
+        if (config.isPm && datePartArray[3] < 12) {
+            datePartArray[3] += 12;
+        }
+        // if is 12 am, change hours to 0
+        if (config.isPm === false && datePartArray[3] === 12) {
+            datePartArray[3] = 0;
+        }
+        // return
+        return dateFromArray(datePartArray, config.isUTC, config.tzh, config.tzm);
+    }
+
+    // date from string and array of format strings
+    function makeDateFromStringAndArray(string, formats) {
+        var output,
+            inputParts = string.match(parseMultipleFormatChunker) || [],
+            formattedInputParts,
+            scoreToBeat = 99,
+            i,
+            currentDate,
+            currentScore;
+        for (i = 0; i < formats.length; i++) {
+            currentDate = makeDateFromStringAndFormat(string, formats[i]);
+            formattedInputParts = formatMoment(new Moment(currentDate), formats[i]).match(parseMultipleFormatChunker) || [];
+            currentScore = compareArrays(inputParts, formattedInputParts);
+            if (currentScore < scoreToBeat) {
+                scoreToBeat = currentScore;
+                output = currentDate;
+            }
+        }
+        return output;
+    }
+
+    // date from iso format
+    function makeDateFromString(string) {
+        var format = 'YYYY-MM-DDT',
+            i;
+        if (isoRegex.exec(string)) {
+            for (i = 0; i < 4; i++) {
+                if (isoTimes[i][1].exec(string)) {
+                    format += isoTimes[i][0];
+                    break;
+                }
+            }
+            return parseTokenTimezone.exec(string) ?
+                makeDateFromStringAndFormat(string, format + ' Z') :
+                makeDateFromStringAndFormat(string, format);
+        }
+        return new Date(string);
+    }
+
+
+    /************************************
+        Relative Time
+    ************************************/
+
+
+    // helper function for moment.fn.from, moment.fn.fromNow, and moment.duration.fn.humanize
+    function substituteTimeAgo(string, number, withoutSuffix, isFuture, lang) {
+        var rt = lang.relativeTime[string];
+        return (typeof rt === 'function') ?
+            rt(number || 1, !!withoutSuffix, string, isFuture) :
+            rt.replace(/%d/i, number || 1);
+    }
+
+    function relativeTime(milliseconds, withoutSuffix, lang) {
+        var seconds = round(Math.abs(milliseconds) / 1000),
+            minutes = round(seconds / 60),
+            hours = round(minutes / 60),
+            days = round(hours / 24),
+            years = round(days / 365),
+            args = seconds < 45 && ['s', seconds] ||
+                minutes === 1 && ['m'] ||
+                minutes < 45 && ['mm', minutes] ||
+                hours === 1 && ['h'] ||
+                hours < 22 && ['hh', hours] ||
+                days === 1 && ['d'] ||
+                days <= 25 && ['dd', days] ||
+                days <= 45 && ['M'] ||
+                days < 345 && ['MM', round(days / 30)] ||
+                years === 1 && ['y'] || ['yy', years];
+        args[2] = withoutSuffix;
+        args[3] = milliseconds > 0;
+        args[4] = lang;
+        return substituteTimeAgo.apply({}, args);
+    }
+
+
+    /************************************
+        Top Level Functions
+    ************************************/
+
+
+    moment = function (input, format) {
+        if (input === null || input === '') {
+            return null;
+        }
+        var date,
+            matched;
+        // parse Moment object
+        if (moment.isMoment(input)) {
+            return new Moment(new Date(+input._d), input._isUTC, input._lang);
+        // parse string and format
+        } else if (format) {
+            if (isArray(format)) {
+                date = makeDateFromStringAndArray(input, format);
+            } else {
+                date = makeDateFromStringAndFormat(input, format);
+            }
+        // evaluate it as a JSON-encoded date
+        } else {
+            matched = aspNetJsonRegex.exec(input);
+            date = input === undefined ? new Date() :
+                matched ? new Date(+matched[1]) :
+                input instanceof Date ? input :
+                isArray(input) ? dateFromArray(input) :
+                typeof input === 'string' ? makeDateFromString(input) :
+                new Date(input);
+        }
+
+        return new Moment(date);
+    };
+
+    // creating with utc
+    moment.utc = function (input, format) {
+        if (isArray(input)) {
+            return new Moment(dateFromArray(input, true), true);
+        }
+        // if we don't have a timezone, we need to add one to trigger parsing into utc
+        if (typeof input === 'string' && !parseTokenTimezone.exec(input)) {
+            input += ' +0000';
+            if (format) {
+                format += ' Z';
+            }
+        }
+        return moment(input, format).utc();
+    };
+
+    // creating with unix timestamp (in seconds)
+    moment.unix = function (input) {
+        return moment(input * 1000);
+    };
+
+    // duration
+    moment.duration = function (input, key) {
+        var isDuration = moment.isDuration(input),
+            isNumber = (typeof input === 'number'),
+            duration = (isDuration ? input._data : (isNumber ? {} : input)),
+            ret;
+
+        if (isNumber) {
+            if (key) {
+                duration[key] = input;
+            } else {
+                duration.milliseconds = input;
+            }
+        }
+
+        ret = new Duration(duration);
+
+        if (isDuration) {
+            ret._lang = input._lang;
+        }
+
+        return ret;
+    };
+
+    // humanizeDuration
+    // This method is deprecated in favor of the new Duration object.  Please
+    // see the moment.duration method.
+    moment.humanizeDuration = function (num, type, withSuffix) {
+        return moment.duration(num, type === true ? null : type).humanize(type === true ? true : withSuffix);
+    };
+
+    // version number
+    moment.version = VERSION;
+
+    // default format
+    moment.defaultFormat = isoFormat;
+
+    // This function will load languages and then set the global language.  If
+    // no arguments are passed in, it will simply return the current global
+    // language key.
+    moment.lang = function (key, values) {
+        var i;
+
+        if (!key) {
+            return currentLanguage;
+        }
+        if (values || !languages[key]) {
+            loadLang(key, values);
+        }
+        if (languages[key]) {
+            // deprecated, to get the language definition variables, use the
+            // moment.fn.lang method or the getLangDefinition function.
+            for (i = 0; i < langConfigProperties.length; i++) {
+                moment[langConfigProperties[i]] = languages[key][langConfigProperties[i]];
+            }
+            moment.monthsParse = languages[key].monthsParse;
+            currentLanguage = key;
+        }
+    };
+
+    // returns language data
+    moment.langData = getLangDefinition;
+
+    // compare moment object
+    moment.isMoment = function (obj) {
+        return obj instanceof Moment;
+    };
+
+    // for typechecking Duration objects
+    moment.isDuration = function (obj) {
+        return obj instanceof Duration;
+    };
+
+    // Set default language, other languages will inherit from English.
+    moment.lang('en', {
+        months : "January_February_March_April_May_June_July_August_September_October_November_December".split("_"),
+        monthsShort : "Jan_Feb_Mar_Apr_May_Jun_Jul_Aug_Sep_Oct_Nov_Dec".split("_"),
+        weekdays : "Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday".split("_"),
+        weekdaysShort : "Sun_Mon_Tue_Wed_Thu_Fri_Sat".split("_"),
+        weekdaysMin : "Su_Mo_Tu_We_Th_Fr_Sa".split("_"),
+        longDateFormat : {
+            LT : "h:mm A",
+            L : "MM/DD/YYYY",
+            LL : "MMMM D YYYY",
+            LLL : "MMMM D YYYY LT",
+            LLLL : "dddd, MMMM D YYYY LT"
+        },
+        meridiem : function (hours, minutes, isLower) {
+            if (hours > 11) {
+                return isLower ? 'pm' : 'PM';
+            } else {
+                return isLower ? 'am' : 'AM';
+            }
+        },
+        calendar : {
+            sameDay : '[Today at] LT',
+            nextDay : '[Tomorrow at] LT',
+            nextWeek : 'dddd [at] LT',
+            lastDay : '[Yesterday at] LT',
+            lastWeek : '[last] dddd [at] LT',
+            sameElse : 'L'
+        },
+        relativeTime : {
+            future : "in %s",
+            past : "%s ago",
+            s : "a few seconds",
+            m : "a minute",
+            mm : "%d minutes",
+            h : "an hour",
+            hh : "%d hours",
+            d : "a day",
+            dd : "%d days",
+            M : "a month",
+            MM : "%d months",
+            y : "a year",
+            yy : "%d years"
+        },
+        ordinal : function (number) {
+            var b = number % 10;
+            return (~~ (number % 100 / 10) === 1) ? 'th' :
+                (b === 1) ? 'st' :
+                (b === 2) ? 'nd' :
+                (b === 3) ? 'rd' : 'th';
+        }
+    });
+
+
+    /************************************
+        Moment Prototype
+    ************************************/
+
+
+    moment.fn = Moment.prototype = {
+
+        clone : function () {
+            return moment(this);
+        },
+
+        valueOf : function () {
+            return +this._d;
+        },
+
+        unix : function () {
+            return Math.floor(+this._d / 1000);
+        },
+
+        toString : function () {
+            return this._d.toString();
+        },
+
+        toDate : function () {
+            return this._d;
+        },
+
+        toArray : function () {
+            var m = this;
+            return [
+                m.year(),
+                m.month(),
+                m.date(),
+                m.hours(),
+                m.minutes(),
+                m.seconds(),
+                m.milliseconds(),
+                !!this._isUTC
+            ];
+        },
+
+        isValid : function () {
+            if (this._a) {
+                // if the parser finds that the input is invalid, it sets
+                // the eighth item in the input array to false.
+                if (this._a[8] != null) {
+                    return !!this._a[8];
+                }
+                return !compareArrays(this._a, (this._a[7] ? moment.utc(this._a) : moment(this._a)).toArray());
+            }
+            return !isNaN(this._d.getTime());
+        },
+
+        utc : function () {
+            this._isUTC = true;
+            return this;
+        },
+
+        local : function () {
+            this._isUTC = false;
+            return this;
+        },
+
+        format : function (inputString) {
+            return formatMoment(this, inputString ? inputString : moment.defaultFormat);
+        },
+
+        add : function (input, val) {
+            var dur = val ? moment.duration(+val, input) : moment.duration(input);
+            addOrSubtractDurationFromMoment(this, dur, 1);
+            return this;
+        },
+
+        subtract : function (input, val) {
+            var dur = val ? moment.duration(+val, input) : moment.duration(input);
+            addOrSubtractDurationFromMoment(this, dur, -1);
+            return this;
+        },
+
+        diff : function (input, val, asFloat) {
+            var inputMoment = this._isUTC ? moment(input).utc() : moment(input).local(),
+                zoneDiff = (this.zone() - inputMoment.zone()) * 6e4,
+                diff = this._d - inputMoment._d - zoneDiff,
+                year = this.year() - inputMoment.year(),
+                month = this.month() - inputMoment.month(),
+                date = this.date() - inputMoment.date(),
+                output;
+            if (val === 'months') {
+                output = year * 12 + month + date / 30;
+            } else if (val === 'years') {
+                output = year + (month + date / 30) / 12;
+            } else {
+                output = val === 'seconds' ? diff / 1e3 : // 1000
+                    val === 'minutes' ? diff / 6e4 : // 1000 * 60
+                    val === 'hours' ? diff / 36e5 : // 1000 * 60 * 60
+                    val === 'days' ? diff / 864e5 : // 1000 * 60 * 60 * 24
+                    val === 'weeks' ? diff / 6048e5 : // 1000 * 60 * 60 * 24 * 7
+                    diff;
+            }
+            return asFloat ? output : round(output);
+        },
+
+        from : function (time, withoutSuffix) {
+            return moment.duration(this.diff(time)).lang(this._lang).humanize(!withoutSuffix);
+        },
+
+        fromNow : function (withoutSuffix) {
+            return this.from(moment(), withoutSuffix);
+        },
+
+        calendar : function () {
+            var diff = this.diff(moment().sod(), 'days', true),
+                calendar = this.lang().calendar,
+                allElse = calendar.sameElse,
+                format = diff < -6 ? allElse :
+                diff < -1 ? calendar.lastWeek :
+                diff < 0 ? calendar.lastDay :
+                diff < 1 ? calendar.sameDay :
+                diff < 2 ? calendar.nextDay :
+                diff < 7 ? calendar.nextWeek : allElse;
+            return this.format(typeof format === 'function' ? format.apply(this) : format);
+        },
+
+        isLeapYear : function () {
+            var year = this.year();
+            return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+        },
+
+        isDST : function () {
+            return (this.zone() < moment([this.year()]).zone() ||
+                this.zone() < moment([this.year(), 5]).zone());
+        },
+
+        day : function (input) {
+            var day = this._isUTC ? this._d.getUTCDay() : this._d.getDay();
+            return input == null ? day :
+                this.add({ d : input - day });
+        },
+
+        startOf: function (val) {
+            // the following switch intentionally omits break keywords
+            // to utilize falling through the cases.
+            switch (val.replace(/s$/, '')) {
+            case 'year':
+                this.month(0);
+                /* falls through */
+            case 'month':
+                this.date(1);
+                /* falls through */
+            case 'day':
+                this.hours(0);
+                /* falls through */
+            case 'hour':
+                this.minutes(0);
+                /* falls through */
+            case 'minute':
+                this.seconds(0);
+                /* falls through */
+            case 'second':
+                this.milliseconds(0);
+                /* falls through */
+            }
+            return this;
+        },
+
+        endOf: function (val) {
+            return this.startOf(val).add(val.replace(/s?$/, 's'), 1).subtract('ms', 1);
+        },
+
+        sod: function () {
+            return this.clone().startOf('day');
+        },
+
+        eod: function () {
+            // end of day = start of day plus 1 day, minus 1 millisecond
+            return this.clone().endOf('day');
+        },
+
+        zone : function () {
+            return this._isUTC ? 0 : this._d.getTimezoneOffset();
+        },
+
+        daysInMonth : function () {
+            return moment.utc([this.year(), this.month() + 1, 0]).date();
+        },
+
+        // If passed a language key, it will set the language for this
+        // instance.  Otherwise, it will return the language configuration
+        // variables for this instance.
+        lang : function (lang) {
+            if (lang === undefined) {
+                return getLangDefinition(this);
+            } else {
+                this._lang = lang;
+                return this;
+            }
+        }
+    };
+
+    // helper for adding shortcuts
+    function makeGetterAndSetter(name, key) {
+        moment.fn[name] = function (input) {
+            var utc = this._isUTC ? 'UTC' : '';
+            if (input != null) {
+                this._d['set' + utc + key](input);
+                return this;
+            } else {
+                return this._d['get' + utc + key]();
+            }
+        };
+    }
+
+    // loop through and add shortcuts (Month, Date, Hours, Minutes, Seconds, Milliseconds)
+    for (i = 0; i < proxyGettersAndSetters.length; i ++) {
+        makeGetterAndSetter(proxyGettersAndSetters[i].toLowerCase(), proxyGettersAndSetters[i]);
+    }
+
+    // add shortcut for year (uses different syntax than the getter/setter 'year' == 'FullYear')
+    makeGetterAndSetter('year', 'FullYear');
+
+
+    /************************************
+        Duration Prototype
+    ************************************/
+
+
+    moment.duration.fn = Duration.prototype = {
+        weeks : function () {
+            return absRound(this.days() / 7);
+        },
+
+        valueOf : function () {
+            return this._milliseconds +
+              this._days * 864e5 +
+              this._months * 2592e6;
+        },
+
+        humanize : function (withSuffix) {
+            var difference = +this,
+                rel = this.lang().relativeTime,
+                output = relativeTime(difference, !withSuffix, this.lang()),
+                fromNow = difference <= 0 ? rel.past : rel.future;
+
+            if (withSuffix) {
+                if (typeof fromNow === 'function') {
+                    output = fromNow(output);
+                } else {
+                    output = fromNow.replace(/%s/i, output);
+                }
+            }
+
+            return output;
+        },
+
+        lang : moment.fn.lang
+    };
+
+    function makeDurationGetter(name) {
+        moment.duration.fn[name] = function () {
+            return this._data[name];
+        };
+    }
+
+    function makeDurationAsGetter(name, factor) {
+        moment.duration.fn['as' + name] = function () {
+            return +this / factor;
+        };
+    }
+
+    for (i in unitMillisecondFactors) {
+        if (unitMillisecondFactors.hasOwnProperty(i)) {
+            makeDurationAsGetter(i, unitMillisecondFactors[i]);
+            makeDurationGetter(i.toLowerCase());
+        }
+    }
+
+    makeDurationAsGetter('Weeks', 6048e5);
+
+
+    /************************************
+        Exposing Moment
+    ************************************/
+
+
+    // CommonJS module is defined
+    if (hasModule) {
+        module.exports = moment;
+    }
+    /*global ender:false */
+    if (typeof ender === 'undefined') {
+        // here, `this` means `window` in the browser, or `global` on the server
+        // add `moment` as a global object via a string identifier,
+        // for Closure Compiler "advanced" mode
+        this['moment'] = moment;
+    }
+    /*global define:false */
+    if (typeof define === "function" && define.amd) {
+        define("moment", [], function () {
+            return moment;
+        });
+    }
+}).call(this);
+
+});
+
+require.define("/backend/node_modules/date-utils/package.json",function(require,module,exports,__dirname,__filename,process,global){module.exports = {"main":"./lib/date-utils"}
+});
+
+require.define("/backend/node_modules/date-utils/lib/date-utils.js",function(require,module,exports,__dirname,__filename,process,global){/*
+
+© 2011 by Jerry Sievert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+*/
+
+(function () {
+    // constants
+    var monthsAbbr = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+    ];
+
+    var monthsFull = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
+    ];
+
+    var daysAbbr = [
+        'Sun',
+        'Mon',
+        'Tue',
+        'Wed',
+        'Thu',
+        'Fri',
+        'Sat'
+    ];
+
+    var daysFull = [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday'
+    ];
+
+    var dayNames = {
+        'su':         0,
+        'sun':        0,
+        'sunday':     0,
+        'mo':         1,
+        'mon':        1,
+        'monday':     1,
+        'tu':         2,
+        'tue':        2,
+        'tuesday':    2,
+        'we':         3,
+        'wed':        3,
+        'wednesday':  3,
+        'th':         4,
+        'thu':        4,
+        'thursday':   4,
+        'fr':         5,
+        'fri':        5,
+        'friday':     5,
+        'sa':         6,
+        'sat':        6,
+        'saturday':   6
+    };
+    var monthsAll = monthsFull.concat(monthsAbbr);
+    var daysAll = [
+        'su',
+        'sun',
+        'sunday',
+        'mo',
+        'mon',
+        'monday',
+        'tu',
+        'tue',
+        'tuesday',
+        'we',
+        'wed',
+        'wednesday',
+        'th',
+        'thu',
+        'thursday',
+        'fr',
+        'fri',
+        'friday',
+        'sa',
+        'sat',
+        'saturday'
+    ];
+
+    var monthNames = {
+        'jan':        0,
+        'january':    0,
+        'feb':        1,
+        'february':   1,
+        'mar':        2,
+        'march':      2,
+        'apr':        3,
+        'april':      3,
+        'may':        4,
+        'jun':        5,
+        'june':       5,
+        'jul':        6,
+        'july':       6,
+        'aug':        7,
+        'august':     7,
+        'sep':        8,
+        'september':  8,
+        'oct':        9,
+        'october':    9,
+        'nov':        10,
+        'november':   10,
+        'dec':        11,
+        'december':   11
+    };
+
+    var daysInMonth = [ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ];
+
+
+    // private helper functions
+    /** @ignore */
+    function pad(str, length) {
+        str = String(str);
+        while (str.length < length) {
+            str = '0' + str;
+        }
+        return str;
+    }
+
+    var isInteger = function (str) {
+        if (str.match(/^(\d+)$/)) {
+            return true;
+        }
+        return false;
+    };
+    var getInt = function (str, i, minlength, maxlength) {
+        for (var x = maxlength; x >= minlength; x--) {
+            var token = str.substring(i, i + x);
+            if (token.length < minlength) {
+                return null;
+            }
+            if (isInteger(token)) {
+                return token;
+            }
+        }
+        return null;
+    };
+
+    // static class methods
+    var origParse = Date.parse;
+    // ------------------------------------------------------------------
+    // getDateFromFormat( date_string , format_string )
+    //
+    // This function takes a date string and a format string. It matches
+    // If the date string matches the format string, it returns the
+    // getTime() of the date. If it does not match, it returns NaN.
+    // Original Author: Matt Kruse <matt@mattkruse.com>
+    // WWW: http://www.mattkruse.com/
+    // Adapted from: http://www.mattkruse.com/javascript/date/source.html
+    // ------------------------------------------------------------------
+
+
+    var getDateFromFormat = function (val, format) {
+        val = val + "";
+        format = format + "";
+        var iVal = 0;
+        var iFormat = 0;
+        var c = "";
+        var token = "";
+        var token2 = "";
+        var x, y;
+        var now = new Date();
+        var year = now.getYear();
+        var month = now.getMonth() + 1;
+        var date = 1;
+        var hh = 0;
+        var mm = 0;
+        var ss = 0;
+        var ampm = "";
+
+
+
+        while (iFormat < format.length) {
+            // Get next token from format string
+            c = format.charAt(iFormat);
+            token = "";
+            while ((format.charAt(iFormat) === c) && (iFormat < format.length)) {
+                token += format.charAt(iFormat++);
+            }
+            // Extract contents of value based on format token
+            if (token === "yyyy" || token === "yy" || token === "y") {
+                if (token === "yyyy") {
+                    x = 4;
+                    y = 4;
+                }
+                if (token === "yy") {
+                    x = 2;
+                    y = 2;
+                }
+                if (token === "y") {
+                    x = 2;
+                    y = 4;
+                }
+                year = getInt(val, iVal, x, y);
+                if (year === null) {
+                    return NaN;
+                }
+                iVal += year.length;
+                if (year.length === 2) {
+                    if (year > 70) {
+                        year = 1900 + (year - 0);
+                    } else {
+                        year = 2000 + (year - 0);
+                    }
+                }
+            } else if (token === "MMM" || token === "NNN") {
+                month = 0;
+                for (var i = 0; i < monthsAll.length; i++) {
+                    var monthName = monthsAll[i];
+                    if (val.substring(iVal, iVal + monthName.length).toLowerCase() === monthName.toLowerCase()) {
+                        if (token === "MMM" || (token === "NNN" && i > 11)) {
+                            month = i + 1;
+                            if (month > 12) {
+                                month -= 12;
+                            }
+                            iVal += monthName.length;
+                            break;
+                        }
+                    }
+                }
+                if ((month < 1) || (month > 12)) {
+                    return NaN;
+                }
+            } else if (token === "EE" || token === "E") {
+                for (var n = 0; n < daysAll.length; n++) {
+                    var dayName = daysAll[n];
+                    if (val.substring(iVal, iVal + dayName.length).toLowerCase() === dayName.toLowerCase()) {
+                        iVal += dayName.length;
+                        break;
+                    }
+                }
+            } else if (token === "MM" || token === "M") {
+                month = getInt(val, iVal, token.length, 2);
+                if (month === null || (month < 1) || (month > 12)) {
+                    return NaN;
+                }
+                iVal += month.length;
+            } else if (token === "dd" || token === "d") {
+                date = getInt(val, iVal, token.length, 2);
+                if (date === null || (date < 1) || (date > 31)) {
+                    return NaN;
+                }
+                iVal += date.length;
+            } else if (token === "hh" || token === "h") {
+                hh = getInt(val, iVal, token.length, 2);
+                if (hh === null || (hh < 1) || (hh > 12)) {
+                    return NaN;
+                }
+                iVal += hh.length;
+            } else if (token === "HH" || token === "H") {
+                hh = getInt(val, iVal, token.length, 2);
+                if (hh === null || (hh < 0) || (hh > 23)) {
+                    return NaN;
+                }
+                iVal += hh.length;
+            } else if (token === "KK" || token === "K") {
+                hh = getInt(val, iVal, token.length, 2);
+                if (hh === null || (hh < 0) || (hh > 11)) {
+                    return NaN;
+                }
+                iVal += hh.length;
+            } else if (token === "kk" || token === "k") {
+                hh = getInt(val, iVal, token.length, 2);
+                if (hh === null || (hh < 1) || (hh > 24)) {
+                    return NaN;
+                }
+                iVal += hh.length;
+                hh--;
+            } else if (token === "mm" || token === "m") {
+                mm = getInt(val, iVal, token.length, 2);
+                if (mm === null || (mm < 0) || (mm > 59)) {
+                    return NaN;
+                }
+                iVal += mm.length;
+            } else if (token === "ss" || token === "s") {
+                ss = getInt(val, iVal, token.length, 2);
+                if (ss === null || (ss < 0) || (ss > 59)) {
+                    return NaN;
+                }
+                iVal += ss.length;
+            } else if (token === "a") {
+                if (val.substring(iVal, iVal + 2).toLowerCase() === "am") {
+                    ampm = "AM";
+                } else if (val.substring(iVal, iVal + 2).toLowerCase() === "pm") {
+                    ampm = "PM";
+                } else {
+                    return NaN;
+                }
+                iVal += 2;
+            } else {
+                if (val.substring(iVal, iVal + token.length) !== token) {
+                    return NaN;
+                } else {
+                    iVal += token.length;
+                }
+            }
+        }
+        // If there are any trailing characters left in the value, it doesn't match
+        if (iVal !== val.length) {
+            return NaN;
+        }
+        // Is date valid for month?
+        if (month === 2) {
+            // Check for leap year
+            if (((year % 4 === 0) && (year % 100 !== 0)) || (year % 400 === 0)) { // leap year
+                if (date > 29) {
+                    return NaN;
+                }
+            } else {
+                if (date > 28) {
+                    return NaN;
+                }
+            }
+        }
+        if ((month === 4) || (month === 6) || (month === 9) || (month === 11)) {
+            if (date > 30) {
+                return NaN;
+            }
+        }
+        // Correct hours value
+        if (hh < 12 && ampm === "PM") {
+            hh = hh - 0 + 12;
+        } else if (hh > 11 && ampm === "AM") {
+            hh -= 12;
+        }
+        var newdate = new Date(year, month - 1, date, hh, mm, ss);
+        return newdate.getTime();
+    };
+
+
+    /** @ignore */
+    Date.parse = function (date, format) {
+        if (format) {
+            return getDateFromFormat(date, format);
+        }
+        var timestamp = origParse(date), minutesOffset = 0, match;
+        if (isNaN(timestamp) && (match = /^(\d{4}|[+\-]\d{6})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{3,}))?)?(?:(Z)|([+\-])(\d{2})(?::?(\d{2}))?))?/.exec(date))) {
+            if (match[8] !== 'Z') {
+                minutesOffset = +match[10] * 60 + (+match[11]);
+
+                if (match[9] === '+') {
+                    minutesOffset = 0 - minutesOffset;
+                }
+            }
+
+            match[7] = match[7] || '000';
+
+            timestamp = Date.UTC(+match[1], +match[2] - 1, +match[3], +match[4], +match[5] + minutesOffset, +match[6], +match[7].substr(0, 3));
+        }
+
+        return timestamp;
+    };
+
+    function polyfill(name, func) {
+        if (Date.prototype[name] === undefined) {
+            Date.prototype[name] = func;
+        }
+    }
+
+    /**
+        Returns new instance of Date object with the date set to today and
+        the time set to midnight
+        @returns {Date} Today's Date
+        @function
+     */
+    Date.today = function () {
+        return new Date().clearTime();
+    };
+
+    /**
+        Returns new instance of Date object with the date set to today and
+        the time set to midnight in UTC
+        @returns {Date} Today's Date in UTC
+        @function
+     */
+    Date.UTCtoday = function () {
+        return new Date().clearUTCTime();
+    };
+
+    /**
+        Returns new instance of Date object with the date set to tomorrow and
+        the time set to midnight
+        @returns {Date} Tomorrow's Date
+        @function
+     */
+    Date.tomorrow = function () {
+        return Date.today().add({days: 1});
+    };
+
+    /**
+        Returns new instance of Date object with the date set to tomorrow and
+        the time set to midnight in UTC
+        @returns {Date} Tomorrow's Date in UTC
+        @function
+     */
+    Date.UTCtomorrow = function () {
+        return Date.UTCtoday().add({days: 1});
+    };
+
+    /**
+        Returns new instance of Date object with the date set to yesterday and
+        the time set to midnight
+        @returns {Date} Yesterday's Date
+        @function
+     */
+    Date.yesterday = function () {
+        return Date.today().add({days: -1});
+    };
+
+    /**
+        Returns new instance of Date object with the date set to yesterday and
+        the time set to midnight in UTC
+        @returns {Date} Yesterday's Date in UTC
+        @function
+     */
+    Date.UTCyesterday = function () {
+        return Date.UTCtoday().add({days: -1});
+    };
+
+    Date.validateDay = function (day, year, month) {
+        var date = new Date(year, month, day);
+        return (date.getFullYear() === year &&
+            date.getMonth() === month &&
+            date.getDate() === day);
+    };
+
+    Date.validateYear = function (year) {
+        return (year >= 0 && year <= 9999);
+    };
+
+    Date.validateSecond = function (second) {
+        return (second >= 0 && second < 60);
+    };
+
+    Date.validateMonth = function (month) {
+        return (month >= 0 && month < 12);
+    };
+
+    Date.validateMinute = function (minute) {
+        return (minute >= 0 && minute < 60);
+    };
+
+    Date.validateMillisecond = function (milli) {
+        return (milli >= 0 && milli < 1000);
+    };
+
+    Date.validateHour = function (hour) {
+        return (hour >= 0 && hour < 24);
+    };
+
+    Date.compare = function (date1, date2) {
+        if (date1.valueOf() < date2.valueOf()) {
+            return -1;
+        } else if (date1.valueOf() > date2.valueOf()) {
+            return 1;
+        }
+        return 0;
+    };
+
+    Date.equals = function (date1, date2) {
+        return date1.valueOf() === date2.valueOf();
+    };
+
+
+    Date.getDayNumberFromName = function (name) {
+        return dayNames[name.toLowerCase()];
+    };
+
+
+    Date.getMonthNumberFromName = function (name) {
+        return monthNames[name.toLowerCase()];
+    };
+
+    Date.isLeapYear = function (year) {
+        return (new Date(year, 1, 29).getDate() === 29);
+    };
+
+    Date.getDaysInMonth = function (year, month) {
+        if (month === 1) {
+            return Date.isLeapYear(year) ? 29 : 28;
+        }
+        return daysInMonth[month];
+    };
+
+    polyfill('getMonthAbbr', function () {
+        return monthsAbbr[this.getMonth()];
+    });
+
+    polyfill('getMonthName', function () {
+        return monthsFull[this.getMonth()];
+    });
+
+    polyfill('getUTCOffset', function () {
+        var tz = pad(Math.abs(this.getTimezoneOffset() / 0.6), 4);
+        if (this.getTimezoneOffset() > 0) {
+            tz = '-' + tz;
+        }
+        return tz;
+    });
+
+    polyfill('toCLFString',  function () {
+        return pad(this.getDate(), 2) + '/' + this.getMonthAbbr() + '/' +
+               this.getFullYear() + ':' + pad(this.getHours(), 2) + ':' +
+               pad(this.getMinutes(), 2) + ':' + pad(this.getSeconds(), 2) +
+               ' ' + this.getUTCOffset();
+    });
+
+    polyfill('toYMD', function (separator) {
+        separator = typeof separator === 'undefined' ? '-' : separator;
+        return this.getFullYear() + separator + pad(this.getMonth() + 1, 2) +
+            separator + pad(this.getDate(), 2);
+    });
+
+    polyfill('toDBString', function () {
+        return this.getUTCFullYear() + '-' +  pad(this.getUTCMonth() + 1, 2) +
+               '-' + pad(this.getUTCDate(), 2) + ' ' + pad(this.getUTCHours(), 2) +
+               ':' + pad(this.getUTCMinutes(), 2) + ':' + pad(this.getUTCSeconds(), 2);
+    });
+
+    polyfill('clearTime', function () {
+        this.setHours(0);
+        this.setMinutes(0);
+        this.setSeconds(0);
+        this.setMilliseconds(0);
+
+        return this;
+    });
+
+    polyfill('clearUTCTime', function () {
+        this.setUTCHours(0);
+        this.setUTCMinutes(0);
+        this.setUTCSeconds(0);
+        this.setUTCMilliseconds(0);
+
+        return this;
+    });
+
+    polyfill('add', function (obj) {
+        if (obj.milliseconds !== undefined) {
+            this.setMilliseconds(this.getMilliseconds() + obj.milliseconds);
+        }
+        if (obj.seconds !== undefined) {
+            this.setSeconds(this.getSeconds() + obj.seconds);
+        }
+        if (obj.minutes !== undefined) {
+            this.setMinutes(this.getMinutes() + obj.minutes);
+        }
+        if (obj.hours !== undefined) {
+            this.setHours(this.getHours() + obj.hours);
+        }
+        if (obj.days !== undefined) {
+            this.setDate(this.getDate() + obj.days);
+        }
+        if (obj.weeks !== undefined) {
+            this.setDate(this.getDate() + (obj.weeks * 7));
+        }
+        if (obj.months !== undefined) {
+            this.setMonth(this.getMonth() + obj.months);
+        }
+        if (obj.years !== undefined) {
+            this.setFullYear(this.getFullYear() + obj.years);
+        }
+        return this;
+    });
+
+    polyfill('addMilliseconds', function (milliseconds) {
+        return this.add({ milliseconds: milliseconds });
+    });
+
+    polyfill('addSeconds', function (seconds) {
+        return this.add({ seconds: seconds });
+    });
+
+    polyfill('addMinutes', function (minutes) {
+        return this.add({ minutes: minutes });
+    });
+
+    polyfill('addHours', function (hours) {
+        return this.add({ hours: hours });
+    });
+
+    polyfill('addDays', function (days) {
+        return this.add({ days: days });
+    });
+
+    polyfill('addWeeks', function (weeks) {
+        return this.add({ days: (weeks * 7) });
+    });
+
+    polyfill('addMonths', function (months) {
+        return this.add({ months: months });
+    });
+
+    polyfill('addYears', function (years) {
+        return this.add({ years: years });
+    });
+
+    polyfill('setTimeToNow', function () {
+        var n = new Date();
+        this.setMilliseconds(n.getMilliseconds());
+        this.setSeconds(n.getSeconds());
+        this.setMinutes(n.getMinutes());
+        this.setHours(n.getHours());
+    });
+
+    polyfill('clone', function () {
+        return new Date(this.valueOf());
+    });
+
+    polyfill('between', function (start, end) {
+        return (this.valueOf() >= start.valueOf() &&
+                this.valueOf() <= end.valueOf());
+    });
+
+    polyfill('compareTo', function (date) {
+        return Date.compare(this, date);
+    });
+
+    polyfill('equals', function (date) {
+        return Date.equals(this, date);
+    });
+
+    polyfill('isAfter', function (date) {
+        date = date ? date : new Date();
+        return (this.compareTo(date) > 0);
+    });
+
+    polyfill('isBefore', function (date) {
+        date = date ? date : new Date();
+        return (this.compareTo(date) < 0);
+    });
+
+    polyfill('getDaysBetween', function (date) {
+        return ((date.clone().valueOf() - this.valueOf()) / 86400000) | 0;
+    });
+
+    polyfill('getHoursBetween', function (date) {
+        return ((date.clone().valueOf() - this.valueOf()) / 3600000) | 0;
+    });
+
+    polyfill('getMinutesBetween', function (date) {
+        return ((date.clone().valueOf() - this.valueOf()) / 60000) | 0;
+    });
+
+    polyfill('getSecondsBetween', function (date) {
+        return ((date.clone().valueOf() - this.valueOf()) / 1000) | 0;
+    });
+
+    polyfill('getMillisecondsBetween', function (date) {
+        return ((date.clone().valueOf() - this.valueOf())) | 0;
+    });
+
+    polyfill('getOrdinalNumber', function () {
+        return Math.ceil((this.clone().clearTime() - new Date(this.getFullYear(), 0, 1)) / 86400000) + 1;
+    });
+
+    polyfill('toFormat', function (format) {
+        return toFormat(format, getReplaceMap(this));
+    });
+
+    polyfill('toUTCFormat', function (format) {
+        return toFormat(format, getUTCReplaceMap(this));
+    });
+
+    var toFormat = function(format, replaceMap) {
+        var f = [ format ], i, l, s;
+        var replace = function (str, rep) {
+            var i = 0, l = f.length, j, ll, t, n = [];
+            for (; i < l; i++) {
+                if (typeof f[i] == 'string') {
+                    t = f[i].split(str);
+                    for (j = 0, ll = t.length - 1; j < ll; j++) {
+                        n.push(t[j]);
+                        n.push([rep]); // replacement pushed as non-string
+                    }
+                    n.push(t[ll]);
+                } else {
+                    // must be a replacement, don't process, just push
+                    n.push(f[i]);
+                }
+            }
+            f = n;
+        };
+
+        for (i in replaceMap) {
+            replace(i, replaceMap[i]);
+        }
+
+        s = '';
+        for (i = 0, l = f.length; i < l; i++)
+          s += typeof f[i] == 'string' ? f[i] : f[i][0];
+        return f.join('');
+    };
+
+    var getReplaceMap = function(date) {
+        var hours = (date.getHours() % 12) ? date.getHours() % 12 : 12;
+        return {
+            'YYYY': date.getFullYear(),
+            'YY': String(date.getFullYear()).slice(-2),
+            'MMMM': monthsFull[date.getMonth()],
+            'MMM': monthsAbbr[date.getMonth()],
+            'MM': pad(date.getMonth() + 1, 2),
+            'MI': pad(date.getMinutes(), 2),
+            'M': date.getMonth() + 1,
+            'DDDD': daysFull[date.getDay()],
+            'DDD': daysAbbr[date.getDay()],
+            'DD': pad(date.getDate(), 2),
+            'D': date.getDate(),
+            'HH24': pad(date.getHours(), 2),
+            'HH': pad(hours, 2),
+            'H': hours,
+            'SS': pad(date.getSeconds(), 2),
+            'PP': (date.getHours() >= 12) ? 'PM' : 'AM',
+            'P': (date.getHours() >= 12) ? 'pm' : 'am',
+            'LL': pad(date.getMilliseconds(), 3)
+        };
+    };
+
+    var getUTCReplaceMap = function(date) {
+        var hours = (date.getUTCHours() % 12) ? date.getUTCHours() % 12 : 12;
+        return {
+            'YYYY': date.getUTCFullYear(),
+            'YY': String(date.getUTCFullYear()).slice(-2),
+            'MMMM': monthsFull[date.getUTCMonth()],
+            'MMM': monthsAbbr[date.getUTCMonth()],
+            'MM': pad(date.getUTCMonth() + 1, 2),
+            'MI': pad(date.getUTCMinutes(), 2),
+            'M': date.getUTCMonth() + 1,
+            'DDDD': daysFull[date.getUTCDay()],
+            'DDD': daysAbbr[date.getUTCDay()],
+            'DD': pad(date.getUTCDate(), 2),
+            'D': date.getUTCDate(),
+            'HH24': pad(date.getUTCHours(), 2),
+            'HH': pad(hours, 2),
+            'H': hours,
+            'SS': pad(date.getUTCSeconds(), 2),
+            'PP': (date.getUTCHours() >= 12) ? 'PM' : 'AM',
+            'P': (date.getUTCHours() >= 12) ? 'pm' : 'am',
+            'LL': pad(date.getUTCMilliseconds(), 3)
+        };
+    };
+}());
+
+});
+
+require.define("/shared/coffee/controller/SuperAccount.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
+  var SuperAccount,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  SuperAccount = (function() {
+
+    SuperAccount.prototype.proceed = function() {
+      this.scope.username = "";
+      this.scope.password = "";
+      return this.scope.email = "";
+    };
+
+    function SuperAccount(scope, model, http, auth) {
+      var _this = this;
+      this.scope = scope;
+      this.model = model;
+      this.http = http;
+      this.auth = auth;
+      this.proceed = __bind(this.proceed, this);
+
+      this.scope.login = function() {
+        _this.scope.error = "";
+        return _this.auth.logIn(_this.scope.username, _this.scope.password, function(err) {
+          if (err) {
+            return _this.scope.error = "Cannot login. Please try again.";
+          } else {
+            return _this.proceed();
+          }
+        });
+      };
+      this.scope.signup = function() {
+        _this.scope.error = "";
+        return _this.auth.signUp(_this.scope.username, _this.scope.email, _this.scope.password, function(err) {
+          if (err) {
+            _this.scope.error = "Cannot signup. Please try again.";
+            return _this.scope.$apply();
+          } else {
+            return _this.proceed();
+          }
+        });
+      };
+      this.scope.forgot = function() {
+        var req;
+        $.mobile.loading("show", {
+          text: "Reseting...",
+          textVisible: true,
+          theme: "z",
+          html: ""
+        });
+        _this.scope.error = "";
+        req = _this.http.post("" + backendurl + "/api/v1/resetpw", {
+          email: _this.scope.email
+        });
+        req.success(function() {
+          $.mobile.loading("hide");
+          _this.scope.resetSent = 'true';
+          return $.mobile.changePage("#pageResetSent");
+        });
+        return req.error(function() {
+          $.mobile.loading("hide");
+          return _this.scope.error = "Error reseting password. Please try again.";
+        });
+      };
+      this.scope.$on("pageResetSent", function() {
+        _this.scope.error = "";
+        return _this.scope.resetSent = 'false';
+      });
+    }
+
+    return SuperAccount;
+
+  })();
+
+  module.exports = SuperAccount;
+
+}).call(this);
+
+});
+
+require.define("/shared/coffee/controller/SuperSettings.coffee",function(require,module,exports,__dirname,__filename,process,global){(function() {
+  var SuperSettings;
+
+  SuperSettings = (function() {
+
+    SuperSettings.prototype.setPassword = function() {
+      var query, user, useruuid,
+        _this = this;
+      this.scope.passwordSetStatus = "Setting...";
+      user = Usergrid.ApiClient.getLoggedInUser();
+      useruuid = user.get("uuid");
+      query = new Usergrid.Query("PUT", "/users/" + useruuid + "/password", {
+        newpassword: this.scope.password,
+        oldpassword: this.scope.oldpassword
+      }, null, function(output) {
+        _this.scope.passwordSetStatus = "Success";
+        _this.scope.password = "";
+        _this.scope.oldpassword = "";
+        return _this.scope.$apply();
+      }, function() {
+        _this.scope.passwordSetStatus = "Error";
+        _this.scope.password = "";
+        _this.scope.oldpassword = "";
+        return _this.scope.$apply();
+      });
+      return Usergrid.ApiClient.runAppQuery(query);
+    };
+
+    function SuperSettings(scope, http, model) {
+      this.scope = scope;
+      this.http = http;
+      this.model = model;
+    }
+
+    return SuperSettings;
+
+  })();
+
+  module.exports = SuperSettings;
+
+}).call(this);
 
 });
 

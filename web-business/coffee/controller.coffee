@@ -1,12 +1,14 @@
 DateUtils = require('date-utils')
+moment = require "moment"
+querystring = require "querystring"
+_ = require "underscore"
 
-class AccountCtrl
+SuperAccount = require "../../shared/coffee/controller/SuperAccount"
+class AccountCtrl extends SuperAccount
   proceed: =>
+    super()
     user = Usergrid.ApiClient.getLoggedInUser()
     uuid = user?.get "uuid"
-    @scope.username = ""
-    @scope.password = ""
-    @scope.email = ""
     @model.get uuid, (business)->
       # console.log business
       # verified = business.get "verified"
@@ -25,47 +27,12 @@ class AccountCtrl
       $.mobile.changePage "#pageClaim"
 
   constructor: (@scope,@model,@http,@auth)->
-    @scope.login = =>
-      @scope.error = ""
-      @auth.logIn @scope.username, @scope.password, (err)=>
-        if err
-          @scope.error = "Cannot login. Please try again."
-        else
-          @proceed()
-    @scope.signup = =>
-      @scope.error = ""
-      @auth.signUp @scope.username, @scope.email, @scope.password, (err)=>
-        if err
-          @scope.error = "Cannot signup. Please try again."
-          @scope.$apply()
-        else
-          @proceed()
-    @scope.forgot = =>
-      $.mobile.loading "show",
-        text: "Reseting..."
-        textVisible: true
-        theme: "z"
-        html: ""
-      @scope.error = ""
-      req = @http.post "#{backendurl}/api/v1/resetpw",
-        email: @scope.email
-      req.success =>
-        $.mobile.loading "hide"
-        @scope.resetSent='true'
-        $.mobile.changePage "#pageResetSent"
-      req.error =>
-        $.mobile.loading "hide"
-        @scope.error = "Error reseting password. Please try again."
-    @scope.$on "pageResetSent", =>
-      @scope.error = ""
-      @scope.resetSent='false'
+    super arguments...
 
 #Inject PageChange just to have it initialize
 AccountCtrl.$inject = ["$scope", "BusinessModel", "$http", "Auth", "PageChange"]
 app.controller("AccountCtrl", AccountCtrl)
 
-querystring = require "querystring"
-_ = require "underscore"
 class ClaimCtrl
   search: =>
     @scope.error = ""
@@ -126,12 +93,12 @@ app.controller("ClaimCtrl", ClaimCtrl)
 class CreateBusinessCtrl
   createBusiness: =>
     user = Usergrid.ApiClient.getLoggedInUser()
-    @model.create user.get("uuid"), @scope.data, ->
+    @model.create user.get("uuid"), @scope.business, ->
       $.mobile.changePage "#pageHome"
     , ->
       @scope.error = "Error trying to create business."
   constructor: (@scope,@model,@http)->
-    @scope.data = {}
+    @scope.business = {}
     @scope.createBusiness = @createBusiness
 
 CreateBusinessCtrl.$inject = ["$scope", "BusinessModel", "$http"]
@@ -217,25 +184,14 @@ class NavigatorCtrl
 NavigatorCtrl.$inject = ["$scope", "BusinessModel", "$http", "Auth"]
 app.controller("NavigatorCtrl", NavigatorCtrl)
 
-class SettingsCtrl
+SuperSettings = require "../../shared/coffee/controller/SuperSettings"  
+class SettingsCtrl extends SuperSettings
   setPassword: =>
-    @scope.passwordSetStatus = ""
-    user = Usergrid.ApiClient.getLoggedInUser()
-    useruuid = user.get "uuid"
-    query = new Usergrid.Query "PUT", "/users/#{useruuid}/password", 
-      newpassword: @scope.password
-      oldpassword: @scope.oldpassword
-    , null, (output) =>
-      @scope.passwordSetStatus = "Success"
-    , =>
-      @scope.passwordSetStatus = "Error"
-    Usergrid.ApiClient.runAppQuery query
-    @scope.password = ""
-    @scope.oldpassword = ""
-    
+    super(@scope)
   constructor: (@scope,@bmodel,@http,@model)->
     @scope.setPassword = @setPassword
     @scope.$on "pageSettings", =>
+      @scope.error = ""
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
       @bmodel.get uuid, (business)=>
@@ -248,7 +204,6 @@ class SettingsCtrl
 SettingsCtrl.$inject = ["$scope", "BusinessModel", "$http", "Model"]
 app.controller("SettingsCtrl", SettingsCtrl)
 
-moment = require "moment"
 class OrdersCtrl
   archive: (order, index)=>
     order.status = "archived"
@@ -318,41 +273,43 @@ class EmployeesCtrl
     req.error =>
       cb("error")
   newEmployee: =>
-    @scope.error = ""
-    if not @scope.nEmployee
-      @scope.error = "Error creating a new employee"
-      return
+    @scope.employees.push 
+      approved: "approved"
     #Create user
-    req = @http.post "#{backendurl}/api/v1/createUser",
-      obj: @scope.nEmployee
-    req.success (userUUID)=>
-      #Create employee
-      @scope.employees.push 
-        businessName: @scope.business.get "businessName"
-      @getNewEmployeeUUID (err, employeeUUID)=>
-        if err
-          @scope.error = "Error creating a new employee"
-          return
-        async.parallel [ (cb)=>
-          @link "users",userUUID,"employees",employeeUUID, (err)=>
-            if err
-              cb "error"
-              return
-            cb null
-        , (cb)=>
-          buuid = @scope.business.get "uuid"
-          @link "employees", employeeUUID, "businesses", buuid, (err)=>
-            if err
-              cb "error"
-              return
-            cb null
-        ], (err)=>
-          if not err
-            history.back()
-          else
-            @scope.error = "Error creating a new employee"
-    req.error =>
-      @scope.error = "Error creating a new employee"
+    # @scope.error = ""
+    # if not @scope.nEmployee
+    #   @scope.error = "Error creating a new employee"
+    #   return
+    # req = @http.post "#{backendurl}/api/v1/createUser",
+    #   obj: @scope.nEmployee
+    # req.success (userUUID)=>
+    #   #Create employee
+    #   @scope.employees.push 
+    #     businessName: @scope.business.get "businessName"
+    #   @getNewEmployeeUUID (err, employeeUUID)=>
+    #     if err
+    #       @scope.error = "Error creating a new employee"
+    #       return
+    #     async.parallel [ (cb)=>
+    #       @link "users",userUUID,"employees",employeeUUID, (err)=>
+    #         if err
+    #           cb "error"
+    #           return
+    #         cb null
+    #     , (cb)=>
+    #       buuid = @scope.business.get "uuid"
+    #       @link "employees", employeeUUID, "businesses", buuid, (err)=>
+    #         if err
+    #           cb "error"
+    #           return
+    #         cb null
+    #     ], (err)=>
+    #       if not err
+    #         history.back()
+    #       else
+    #         @scope.error = "Error creating a new employee"
+    # req.error =>
+    #   @scope.error = "Error creating a new employee"
 
   constructor: (@scope,@bmodel,@http,@model,CModel)->
     @scope.approveEmployee = @approveEmployee

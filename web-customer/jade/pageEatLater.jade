@@ -5,8 +5,9 @@ div(data-role='content', data-theme="c")
   p {{eatLaterCtrl.error}}
   fieldset(data-role="controlgroup",data-type="horizontal")
     legend When: 
-    input(ng-model="eatLaterCtrl.time", type='date', data-role='datebox', data-options='{"mode": "timebox", "timeFormat": 24}')
+    input(ng-model="eatLaterCtrl.time", ng-change="eatLaterCtrl.selectTime()",type='date', data-role='datebox', data-options='{"mode": "timebox", "timeFormat": 24}')
   fieldset(data-role='controlgroup')
+    | Try... MIT
     input#eatnow.search(ng-change="eatLaterCtrl.search()",ng-model="eatLaterCtrl.searchTxt", name='', placeholder='Search by name', value='', type='search')
   ul(data-role='listview', data-filter="true", data-inset='true')
     li(ng-repeat="business in eatLaterCtrl.businesses")
@@ -18,4 +19,4 @@ div(data-role='content', data-theme="c")
         p.ui-li-aside
           | Discount {{business.discount}}%
   div
-    include contactus
+    include ../../shared/jade/contactus

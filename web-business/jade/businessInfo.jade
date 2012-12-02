@@ -1,0 +1,29 @@
+mixin businessInfo(liclass)
+  li(data-role="fieldcontain", class="#{liclass}")
+    fieldset(data-role="controlgroup",data-type="horizontal", for="name")
+      legend Business Name:
+      input(type='text', ng-model="business.businessName", name='name', value='',placeholder="Name")
+  li(data-role="fieldcontain", class="#{liclass}")
+    fieldset(data-role="controlgroup",data-type="horizontal", for="phone")
+      legend Phone:
+      input(type='text', ng-model="business.phone", name='phone', value='',placeholder="Phone")
+  li(data-role="fieldcontain", class="#{liclass}")
+    fieldset(data-role="controlgroup",data-type="horizontal",for="street_address") 
+      legend Street Address:
+      input(type='text', ng-model="business.street_address", name='street_address', value='', placeholder="Street Address")
+  li(data-role="fieldcontain", class="#{liclass}")
+    fieldset(data-role="controlgroup",data-type="horizontal",for="city") 
+      legend City:
+      input(type='text', ng-model="business.city", name='city', value='',placeholder="City")
+  li(data-role="fieldcontain", class="#{liclass}")
+    fieldset(data-role="controlgroup",data-type="horizontal",for="region") 
+      legend State:
+      input(type='text', ng-model="business.region", name='region', value='',placeholder="State")
+  li(data-role="fieldcontain", class="#{liclass}")
+    fieldset(data-role="controlgroup",data-type="horizontal",for="postal_code") 
+      legend Postal Code:
+      input(type='text', ng-model="business.postal_code", name='postal_code', value='',placeholder="Postal Code")
+  li(data-role="fieldcontain", class="#{liclass}")
+    fieldset(data-role="controlgroup",data-type="horizontal",for="country")
+      legend Country:
+      input(type='text', ng-model="business.country", name='country', value='',placeholder="Country")

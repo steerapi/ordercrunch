@@ -129,11 +129,14 @@ html
       //-       | Help
 
     #pageLogin(data-role='page',data-add-back-btn="true",ngm-shared-controller="accountCtrl:AccountCtrl")
-      include jade/pageLogin
+      include ../shared/jade/pageLogin
+      mixin pageLogin('Business', true)
     #pageSignup(data-role='page',data-add-back-btn="true",ngm-shared-controller="accountCtrl:AccountCtrl")
-      include jade/pageSignup
+      include ../shared/jade/pageSignup
+      mixin pageSignup('Business')
     #pageResetSent(data-role='page',data-add-back-btn="true",ngm-shared-controller="accountCtrl:AccountCtrl")
-      include jade/pageResetSent
+      include ../shared/jade/pageResetSent
+      mixin pageReset('Business')
     #pageClaim(data-role='page',data-add-back-btn="true",ngm-shared-controller="claimCtrl:ClaimCtrl")
       include jade/pageClaim
     #pageVerifying(data-role='page',data-add-back-btn="true",ngm-shared-controller="claimCtrl:ClaimCtrl")

@@ -1,7 +1,8 @@
 div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
   a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
   h1 Manage Employees
-  a(href="#pageCreateNewEmployee", data-role="button", data-inline="true", data-icon="plus")
+  //- a(href="#pageCreateNewEmployee", data-role="button", data-inline="true", data-icon="plus")
+  a(ng-click="employeesCtrl.newEmployee()", data-role="button", data-inline="true", data-icon="plus")
     | New
 
 div(data-role='content', data-theme="c")

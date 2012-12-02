@@ -1,50 +1,15 @@
 DateUtils = require('date-utils')
+querystring = require "querystring"
+_ = require "underscore"
+async = require "async"
 
-class AccountCtrl
+SuperAccount = require "../../shared/coffee/controller/SuperAccount"
+class AccountCtrl extends SuperAccount
   proceed: =>
-    user = Usergrid.ApiClient.getLoggedInUser()
-    uuid = user?.get "uuid"
-    @scope.username = ""
-    @scope.password = ""
-    @scope.email = ""
+    super()
     $.mobile.changePage "#pageHome"
-
   constructor: (@scope,@model,@http,@auth)->
-    @scope.login = =>
-      @scope.error = ""
-      @auth.logIn @scope.username, @scope.password, (err)=>
-        if err
-          @scope.error = "Cannot login. Please try again."
-        else
-          @proceed()
-    @scope.signup = =>
-      @scope.error = ""
-      @auth.signUp @scope.username, @scope.email, @scope.password, (err)=>
-        if err
-          @scope.error = "Cannot signup. Please try again."
-          @scope.$apply()
-        else
-          @proceed()
-    @scope.forgot = =>
-      $.mobile.loading "show",
-        text: "Reseting..."
-        textVisible: true
-        theme: "z"
-        html: ""
-      @scope.error = ""
-      req = @http.post "#{backendurl}/api/v1/resetpw",
-        email: @scope.email
-      req.success =>
-        $.mobile.loading "hide"
-        @scope.resetSent='true'
-        $.mobile.changePage "#pageResetSent"
-      req.error =>
-        $.mobile.loading "hide"
-        @scope.error = "Error reseting password. Please try again."
-    @scope.$on "pageResetSent", =>
-      @scope.error = ""
-      @scope.resetSent='false'
-
+    super arguments...
 #Inject PageChange just to have it initialize
 AccountCtrl.$inject = ["$scope", "EmployeeModel", "$http", "Auth", "PageChange"]
 app.controller("AccountCtrl", AccountCtrl)
@@ -61,10 +26,6 @@ class HomeCtrl
 
 HomeCtrl.$inject = ["$scope", "Model", "$http"]
 app.controller("HomeCtrl", HomeCtrl)
-
-querystring = require "querystring"
-_ = require "underscore"
-async = require "async"
 
 class JoinCtrl
   search: =>
@@ -83,9 +44,12 @@ class JoinCtrl
     req.error =>
       cb("error")  
   join: (business)=>
+    user = Usergrid.ApiClient.getLoggedInUser()
+    uuid = user.get "uuid"
     req = @http.post "#{backendurl}/apigee/api/v1/employees",
       obj:
         businessName: business.businessName
+        employeeName: user.get("name") || user.get("username")
     @scope.error = ""
     req.success (response)=>
       employeeData = response.entities[0]
@@ -119,11 +83,6 @@ app.controller("JoinCtrl", JoinCtrl)
 
 class NavigatorCtrl
   constructor: (@scope,@model,@http, @auth)->
-    req = @http.post "#{backendurl}/api/v1/login",
-      username: "tester"
-      password: "tester"
-    Usergrid.ApiClient.logInAppUser "tester", "tester", (response, user) ->
-
     @scope.logout = =>
       slidemenu($("#slidemenu"), true);
       @auth.logOut()
@@ -137,22 +96,10 @@ class NavigatorCtrl
 NavigatorCtrl.$inject = ["$scope", "Model", "$http", "Auth"]
 app.controller("NavigatorCtrl", NavigatorCtrl)
 
-class SettingsCtrl
+SuperSettings = require "../../shared/coffee/controller/SuperSettings"  
+class SettingsCtrl extends SuperSettings
   setPassword: =>
-    @scope.passwordSetStatus = ""
-    user = Usergrid.ApiClient.getLoggedInUser()
-    useruuid = user.get "uuid"
-    query = new Usergrid.Query "PUT", "/users/#{useruuid}/password", 
-      newpassword: @scope.password
-      oldpassword: @scope.oldpassword
-    , null, (output) =>
-      @scope.passwordSetStatus = "Success"
-    , =>
-      @scope.passwordSetStatus = "Error"
-    Usergrid.ApiClient.runAppQuery query
-    @scope.password = ""
-    @scope.oldpassword = ""
-    
+    super(@scope)    
   constructor: (@scope,@http,@model)->
     @scope.setPassword = @setPassword
     # @scope.$on "pageSettings", =>

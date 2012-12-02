@@ -20,20 +20,4 @@ div(data-role='content')
     //-     fieldset(data-role="controlgroup",data-type="horizontal", for="maxdiscount")
     //-       legend Maximum discount per order (%):
     //-       input(type='text', ng-model="business.maxdiscount", name='maxdiscount', value='',placeholder="10")
-    ul.collapsible-list(data-role="listview", data-inset="true")
-      div(data-role="collapsible")
-        h3 Change Password
-        ul(class="ui-listview ui-listview-inset ui-corner-all ui-shadow")
-          {{passwordSetStatus}}
-          li(data-role="fieldcontain", class="ui-body ui-br ui-li ui-li-static ui-btn-up-c ui-corner-top")
-            fieldset(data-role="controlgroup",data-type="horizontal", for="oldpassword")
-              legend Old Password:
-              input(type='password', ng-model="oldpassword", name='oldpassword', value='',placeholder="Old Password")
-          li(data-role="fieldcontain", class="ui-body ui-br ui-li ui-li-static ui-btn-up-c ui-corner-top")
-            fieldset(data-role="controlgroup",data-type="horizontal", for="password")
-              legend New Password:
-              input(type='password', ng-model="password", name='password', value='',placeholder="New Password")
-          li.ui-body
-            fieldset
-              button.ui-block-a(ng-click="setPassword()")
-                | Set Password
+    include ../../shared/jade/setPassword

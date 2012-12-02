@@ -1,74 +1,61 @@
 DateUtils = require('date-utils')
 # graphs = require './graphs'
 moment = require 'moment'
-# console.log moment
+querystring = require "querystring"
+_ = require "underscore"
+async = require "async"
 format = require "../../backend/apis/format"
 formatTime = format.formatTime
 formatDate = format.formatDate
 formatDateTime = format.formatDateTime
 
-t2i = (time)->
-  day = moment(time,formatTime)
-  hr = day.hours()
-  min = day.minutes()
-  return (hr*4)+(Math.floor min/15)
-
-i2t = (interval)->
-  a = moment().sod()
-  a.add('minutes', interval*15)
-  a.format(formatTime)
+tiit = require "../../backend/apis/tiit"
+t2i = tiit.t2i
+i2t = tiit.i2t
 
 class EatCtrl
   searchNearby: ->
     #TODO
   search: ->
-    # @scope.error = ""
-    # if @scope.searchTxt == ""
-    #   @searchNearby()
-    # day = @scope.moment
-    # hr = day.hours()
-    # min = day.minutes()
-    # interval = (hr*4)+(Math.floor min/15)
-    # params = querystring.stringify
-    #   name: @scope.searchTxt
-    #   interval: interval
-    # req = @http.get "#{backendurl}/api/v1/discounts?#{params}"
-    # req.success (discounts)=>
-    #   @scope.businesses = discounts
-    # req.error =>
-    #   @scope.error = "search error"
-
-class EatNowCtrl extends EatCtrl
-  search: =>
-    @scope.moment = moment()
     @scope.error = ""
     if @scope.searchTxt == ""
       @searchNearby()
     day = @scope.moment
     hr = day.hours()
     min = day.minutes()
-    interval = (hr*4)+(Math.floor min/15)
+    interval = (hr*4)+(Math.floor(min/15))
     @scope.interval = interval
     @scope.time = i2t(interval)
+    # console.log "interval", interval
     params = querystring.stringify
       name: @scope.searchTxt
-      interval: interval
+      interval: ""+interval
     req = @http.get "#{backendurl}/api/v1/discounts?#{params}"
     req.success (discounts)=>
       @scope.businesses = discounts
     req.error =>
       @scope.error = "search error"
-
-    # super.search()
-  select: (business)=>
+      @scope.$apply()
+  select: (business)->
+    console.log "BUSINESS SELECTED", business
+    console.log "@scope SELECTED", @scope
     @model.selected = business
     @model.selected.time = @scope.time
     @model.selected.interval = @scope.interval
     $.mobile.changePage "#pageMenu"
+    
+class EatNowCtrl extends EatCtrl
+  search: =>
+    @scope.moment = moment()
+    super()
+  select: (business)=>
+    super(business)
   constructor: (@scope,@model,@http)->
+    $.extend @scope,@
     @scope.search = _.throttle @search, 1000
-    @scope.select = @select
     @scope.$on "pageEatNow", =>
+      @scope.searchTxt = ""
+      @scope.businesses = []
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
       @model.get uuid, (customer)=>
@@ -77,50 +64,35 @@ EatNowCtrl.$inject = ["$scope", "CustomerModel", "$http"]
 app.controller("EatNowCtrl", EatNowCtrl)
   
 class EatLaterCtrl extends EatCtrl
+  selectTime: =>
+    @scope.searchTxt = ""
+    @scope.businesses = []    
   search: =>
     if not @scope.time
       @scope.error = "Please select time"
       return
     @scope.moment = moment(@scope.time,formatTime)
-    @scope.error = ""
-    if @scope.searchTxt == ""
-      @searchNearby()
-    day = @scope.moment
-    hr = day.hours()
-    min = day.minutes()
-    interval = (hr*4)+(Math.floor min/15)
-    @scope.interval = interval
-    @scope.time = i2t(interval)
-    params = querystring.stringify
-      name: @scope.searchTxt
-      interval: interval
-    req = @http.get "#{backendurl}/api/v1/discounts?#{params}"
-    req.success (discounts)=>
-      @scope.businesses = discounts
-    req.error =>
-      @scope.error = "search error"
-
-    # super.search()
+    super()
   select: (business)=>
-    @model.selected = business
-    @model.selected.time = @scope.time
-    @model.selected.interval = @scope.interval
-    $.mobile.changePage "#pageMenu"
+    super(business)
   constructor: (@scope,@model,@http)->
-    # console.log "SEARCH FUNC", @search
+    $.extend @scope,@
     @scope.search = _.throttle @search, 1000
-    @scope.select = @select
-    @scope.$on "pageEatNow", =>
+    @scope.$on "pageEatLater", =>
+      @scope.searchTxt = ""
+      @scope.businesses = []
       user = Usergrid.ApiClient.getLoggedInUser()
       uuid = user?.get("uuid")
       @model.get uuid, (customer)=>
         console.log customer
+
 EatLaterCtrl.$inject = ["$scope", "CustomerModel", "$http"]
 app.controller("EatLaterCtrl", EatLaterCtrl)
 
 class MenuCtrl
   back: =>
-    @scope.order = []
+    # @scope.order = []
+    @clear()
     $.mobile.changePage "#pageHome"
   confirm: =>
     $.mobile.loading "show"
@@ -143,9 +115,10 @@ class MenuCtrl
     @scope.order.push
       from:
         customerName: customer._data.customerName
-        username: user._data.username
+        name: user._data.name
         uuid: customer._data.uuid
         phone: customer._data.phone
+        username: user._data.username
         email: user._data.email
       to:
         businessName: @model.selected.businessName
@@ -179,8 +152,6 @@ class MenuCtrl
     @scope.totalCount = 0
     @scope.total = 0
     @scope.sections = []
-  back: =>
-    $.mobile.changePage "#pageHome"
   selectSection: (section)=>
     @scope.section=section
     @scope.items = []
@@ -252,6 +223,9 @@ ConfirmCtrl.$inject = ["$scope", "CustomerModel", "$http"]
 app.controller("ConfirmCtrl", ConfirmCtrl)
 
 class OrdersCtrl
+  archive: (order, index)=>
+    order.status = "archived"
+    # order = @scope.completed.splice index,1
   constructor: (@scope,@model,@http, CModel)->
     @scope.complete = @complete
     @scope.archive = @archive
@@ -260,59 +234,25 @@ class OrdersCtrl
       uuid = user?.get("uuid")
       @model.get uuid, (customer)=>
         cuuid = customer.get "uuid"
-        query = new Usergrid.Query "GET", "customers/#{cuuid}/orders", null, null, (response) =>
-          @scope.orders = response.entities
-          @scope.$apply()
-        , ->
-        Usergrid.ApiClient.runAppQuery query
+        @ordersCModel?.unbind()
+        @ordersCModel = new CModel("#{backendurl}/api/v1", "customers", cuuid, "orders", "select * where status='ordered' order by created desc")
+        @ordersCModel.bind @scope,"orders"
+        # query = new Usergrid.Query "GET", "customers/#{cuuid}/orders", null, null, (response) =>
+        #   @scope.orders = response.entities
+        #   @scope.$apply()
+        # , ->
+        # Usergrid.ApiClient.runAppQuery query
 
 OrdersCtrl.$inject = ["$scope", "CustomerModel", "$http", "CollectionModel"]
 app.controller("OrdersCtrl", OrdersCtrl)
 
-class AccountCtrl
+SuperAccount = require "../../shared/coffee/controller/SuperAccount"
+class AccountCtrl extends SuperAccount
   proceed: =>
-    user = Usergrid.ApiClient.getLoggedInUser()
-    uuid = user?.get "uuid"
-    @scope.username = ""
-    @scope.password = ""
-    @scope.email = ""
+    super()
     $.mobile.changePage "#pageHome"
-
   constructor: (@scope,@model,@http,@auth)->
-    @scope.login = =>
-      @scope.error = ""
-      @auth.logIn @scope.username, @scope.password, (err)=>
-        if err
-          @scope.error = "Cannot login. Please try again."
-        else
-          @proceed()
-    @scope.signup = =>
-      @scope.error = ""
-      @auth.signUp @scope.username, @scope.email, @scope.password, (err)=>
-        if err
-          @scope.error = "Cannot signup. Please try again."
-          @scope.$apply()
-        else
-          @proceed()
-    @scope.forgot = =>
-      $.mobile.loading "show",
-        text: "Reseting..."
-        textVisible: true
-        theme: "z"
-        html: ""
-      @scope.error = ""
-      req = @http.post "#{backendurl}/api/v1/resetpw",
-        email: @scope.email
-      req.success =>
-        $.mobile.loading "hide"
-        @scope.resetSent='true'
-        $.mobile.changePage "#pageResetSent"
-      req.error =>
-        $.mobile.loading "hide"
-        @scope.error = "Error reseting password. Please try again."
-    @scope.$on "pageResetSent", =>
-      @scope.error = ""
-      @scope.resetSent='false'
+    super arguments...
 
 #Inject PageChange just to have it initialize
 AccountCtrl.$inject = ["$scope", "CustomerModel", "$http", "Auth", "PageChange"]
@@ -331,97 +271,19 @@ class HomeCtrl
 HomeCtrl.$inject = ["$scope", "Model", "$http"]
 app.controller("HomeCtrl", HomeCtrl)
 
-querystring = require "querystring"
-_ = require "underscore"
-async = require "async"
-
-class JoinCtrl
-  search: =>
-    @scope.error = ""
-    params = querystring.stringify
-      ql: "select * where businessName contains '#{@scope.searchTxt}'"
-    req = @http.get "#{backendurl}/apigee/api/v1/businesses?#{params}"
-    req.success (response)=>
-      @scope.businesses = response.entities
-    req.error =>
-      @scope.error = "search error"
-  link: (col1,id1,col2,id2,cb)=>
-    req = @http.post "#{backendurl}/apigee/api/v1/#{col1}/#{id1}/#{col2}/#{id2}"
-    req.success =>
-      cb()
-    req.error =>
-      cb("error")  
-  join: (business)=>
-    req = @http.post "#{backendurl}/apigee/api/v1/employees",
-      obj:
-        businessName: business.businessName
-    @scope.error = ""
-    req.success (response)=>
-      employeeData = response.entities[0]
-      employeeUUID = employeeData.uuid
-      linkEB = (donecb)=>        
-        @link "employees", employeeUUID, "businesses", business.uuid, (err)=>
-          donecb err
-      linkBE = (donecb)=>        
-        @link "businesses", business.uuid, "employees", employeeUUID, (err)=>
-          donecb err
-      linkUE = (donecb)=>
-        user = Usergrid.ApiClient.getLoggedInUser()
-        uuid = user.get "uuid"
-        @link "users", uuid, "employees", employeeUUID, (err)=>
-          donecb err
-      async.parallel [linkUE, linkEB, linkBE], (err)->
-        if err
-          @scope.error = "Error trying to join the business. Please try again."
-        else
-          $.mobile.changePage "#pageHome"
-    req.error =>
-      @scope.error = "Error trying to join the business. Please try again."
-
-  constructor: (@scope,@smodel,@http, @model)->
-    @scope.search = _.throttle @search, 1000
-    @scope.join = @join
-    @scope.$on "pageJoin", =>
-
-JoinCtrl.$inject = ["$scope", "CustomerModel", "$http", "Model"]
-app.controller("JoinCtrl", JoinCtrl)
-
 class NavigatorCtrl
   constructor: (@scope,@model,@http, @auth)->
-    req = @http.post "#{backendurl}/api/v1/login",
-      username: "tester"
-      password: "tester"
-    Usergrid.ApiClient.logInAppUser "tester", "tester", (response, user) ->
-
     @scope.logout = =>
       slidemenu($("#slidemenu"), true);
       @auth.logOut()
-    # @scope.$on "pageHome", =>
-    #   user = Usergrid.ApiClient.getLoggedInUser()
-    #   uuid = user.get "uuid"
-    #   @employeesCModel?.unbind()
-    #   @employeesCModel = new CModel("#{backendurl}/api/v1", "users", uuid, "employees")
-    #   @employeesCModel.bind @scope,"employees"
 
 NavigatorCtrl.$inject = ["$scope", "Model", "$http", "Auth"]
 app.controller("NavigatorCtrl", NavigatorCtrl)
 
-class SettingsCtrl
+SuperSettings = require "../../shared/coffee/controller/SuperSettings"  
+class SettingsCtrl extends SuperSettings
   setPassword: =>
-    @scope.passwordSetStatus = ""
-    user = Usergrid.ApiClient.getLoggedInUser()
-    useruuid = user.get "uuid"
-    query = new Usergrid.Query "PUT", "/users/#{useruuid}/password", 
-      newpassword: @scope.password
-      oldpassword: @scope.oldpassword
-    , null, (output) =>
-      @scope.passwordSetStatus = "Success"
-    , =>
-      @scope.passwordSetStatus = "Error"
-    Usergrid.ApiClient.runAppQuery query
-    @scope.password = ""
-    @scope.oldpassword = ""
-    
+    super(@scope)    
   constructor: (@scope,@http,@model)->
     @scope.setPassword = @setPassword
     # @scope.$on "pageSettings", =>
@@ -434,69 +296,4 @@ class SettingsCtrl
 
 SettingsCtrl.$inject = ["$scope", "$http", "Model"]
 app.controller("SettingsCtrl", SettingsCtrl)
-
-class EmployeesCtrl
-  newShift: =>
-    if @scope.tap == 'default'
-      @scope.regularHours[@scope.dayOfWeek]?=[]
-      @scope.regularHours[@scope.dayOfWeek].splice 0,0,["",""]
-    else
-      @scope.specialHours[@scope.dateOfYear]?=[]
-      @scope.specialHours[@scope.dateOfYear].splice 0,0,["",""]
-  cleanData: (obj)=>
-    for k,hours of obj
-      if not k
-        delete obj[k]
-        continue
-      for i in [hours.length-1..0]
-        v = hours[i]
-        if (not v?[0]) or (not v?[1])
-          hours.splice i,1
-      if hours.length <= 0
-        delete obj[k]
-        continue
-    return
-  deleteEmployee: (index)=>
-    @scope.employees.splice index,1
-  constructor: (@scope,@smodel,@http,@model,CModel)->
-    @scope.deleteEmployee = @deleteEmployee
-    @scope.$on "pageEmployees", =>
-      user = Usergrid.ApiClient.getLoggedInUser()
-      uuid = user?.get("uuid")
-      @employeesCModel?.unbind()
-      @employeesCModel = new CModel("#{backendurl}/api/v1", "users", uuid, "employees", null)
-      @employeesCModel.bind @scope,"employees"
-
-    d = new Date()
-    @scope.regularHours = {}
-    @scope.specialHours = {}
-    @scope.days = ["Sunday", "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
-    @scope.newShift = @newShift
-    @scope.dayOfWeek = d.toFormat("DDDD")
-    @scope.dateOfYear = d.toFormat("MM/DD/YYYY")
-    @scope.$on "pageShiftCalendar", =>
-      user = Usergrid.ApiClient.getLoggedInUser()
-      uuid = user?.get("uuid")
-      @scope.deregfn1?()
-      @scope.deregfn2?()
-      deregcb1 = (deregfn)=>
-        @scope.deregfn1 = deregfn
-      deregcb2 = (deregfn)=>
-        @scope.deregfn2 = deregfn
-      @model.bind @scope,"regularHours","#{backendurl}/api/v1/employees/#{uuid}/$.regularHours", {}, (obj)=>
-        @cleanData(obj)            
-      ,deregcb1
-      @model.bind @scope,"specialHours","#{backendurl}/api/v1/employees/#{uuid}/$.specialHours", {}, (obj)=>
-        @cleanData(obj)
-      ,deregcb2
-    @scope.newInterval = @newInterval
-
-EmployeesCtrl.$inject = ["$scope", "CustomerModel", "$http", "Model", "CollectionModel"]
-app.controller("EmployeesCtrl", EmployeesCtrl)
-
-class OpenShiftsCtrl
-  constructor: (@scope,@smodel,@http,@model,CModel)->
-
-OpenShiftsCtrl.$inject = ["$scope", "CustomerModel", "$http", "Model", "CollectionModel"]
-app.controller("OpenShiftsCtrl", OpenShiftsCtrl)
 

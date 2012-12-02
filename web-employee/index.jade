@@ -70,70 +70,15 @@ html
   body(ng-app="app")
     #slidemenu(ng-controller="NavigatorCtrl")
       include jade/menuNavigator
-      //- include jade/menuSection
-      //- h3 Manage Employees
-      //- ul
-      //-   li
-      //-     a(href='#another_page3')
-      //-       img(src='img/smico3.png')
-      //-       | 
-      //- h3 Manage Menus
-      //- ul
-      //-   li
-      //-     a(href='#another_page3')
-      //-       img(src='img/smico3.png')
-      //-       | Activity
-      //-   li
-      //-     a(href='test.html', rel='external')
-      //-       img(src='img/smico5.png')
-      //-       | Invite Friends
-      //-   li
-      //-     a(href='#another_page')
-      //-       img(src='img/smico6.png')
-      //-       | Settings
-      //-   li
-      //-     a(href='test.html', rel='external')
-      //-       img(src='img/smico4.png')
-      //-       | Help
-      //-   li
-      //-     a(href='#another_page2')
-      //-       img(src='img/smico3.png')
-      //-       | Activity
-      //-   li
-      //-     a(href='test.html', rel='external')
-      //-       img(src='img/smico5.png')
-      //-       | Invite Friends
-      //-   li
-      //-     a(href='#main_page')
-      //-       img(src='img/smico6.png')
-      //-       | Settings
-      //-   li
-      //-     a(href='#another_page')
-      //-       img(src='img/smico4.png')
-      //-       | Help
-      //-   li
-      //-     a(href='test.html', rel='external')
-      //-       img(src='img/smico3.png')
-      //-       | Activity
-      //-   li
-      //-     a(href='#another_page2')
-      //-       img(src='img/smico5.png')
-      //-       | Invite Friends
-      //-   li
-      //-     a(href='test.html', rel='external')
-      //-       img(src='img/smico6.png')
-      //-       | Settings
-      //-   li
-      //-     a(href='test.html', rel='external')
-      //-       img(src='img/smico4.png')
-      //-       | Help
-
     #pageLogin(data-role='page',data-add-back-btn="true",ngm-shared-controller="accountCtrl:AccountCtrl")
-      include jade/pageLogin
+      include ../shared/jade/pageLogin
+      mixin pageLogin('Employee', false)
     #pageSignup(data-role='page',data-add-back-btn="true",ngm-shared-controller="accountCtrl:AccountCtrl")
-      include jade/pageSignup
+      include ../shared/jade/pageSignup
+      mixin pageSignup('Employee')
     #pageResetSent(data-role='page',data-add-back-btn="true",ngm-shared-controller="accountCtrl:AccountCtrl")
-      include jade/pageResetSent
+      include ../shared/jade/pageResetSent
+      mixin pageReset('Employee')
     #pageJoin(data-role='page',data-add-back-btn="true",ng-controller="JoinCtrl")
       include jade/pageJoin
     #pageHome(data-role='page',data-add-back-btn="true", ng-controller="HomeCtrl")
@@ -146,4 +91,3 @@ html
       include jade/pageShiftCalendar
     #pageOpenShifts(data-role='page',data-add-back-btn="true", ngm-shared-controller="employeesCtrl:EmployeesCtrl")
       include jade/pageOpenShifts
-

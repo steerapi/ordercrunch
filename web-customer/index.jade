@@ -87,11 +87,14 @@ html
     #slidemenu(ng-controller="NavigatorCtrl")
       include jade/menuNavigator
     #pageLogin(data-role='page',data-add-back-btn="true",ngm-shared-controller="accountCtrl:AccountCtrl")
-      include jade/pageLogin
+      include ../shared/jade/pageLogin
+      mixin pageLogin('Customer', false)
     #pageSignup(data-role='page',data-add-back-btn="true",ngm-shared-controller="accountCtrl:AccountCtrl")
-      include jade/pageSignup
+      include ../shared/jade/pageSignup
+      mixin pageSignup('Customer')
     #pageResetSent(data-role='page',data-add-back-btn="true",ngm-shared-controller="accountCtrl:AccountCtrl")
-      include jade/pageResetSent
+      include ../shared/jade/pageResetSent
+      mixin pageReset('Customer')
     #pageHome(data-role='page',data-add-back-btn="true", ng-controller="HomeCtrl")
       include jade/pageHome
     #pageSettings(data-role='page',data-add-back-btn="true", ng-controller="SettingsCtrl")

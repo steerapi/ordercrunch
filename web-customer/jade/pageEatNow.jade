@@ -4,6 +4,7 @@ div(data-role='header', data-position='fixed', data-tap-toggle='false', data-upd
 div(data-role='content', data-theme="c")
   p {{eatNowCtrl.error}}
   fieldset(data-role='controlgroup')
+    | Try... MIT
     input#eatnow.search(ng-change="eatNowCtrl.search()",ng-model="eatNowCtrl.searchTxt", name='', placeholder='Search by name', value='', type='search')
   ul(data-role='listview', data-filter="true", data-inset='true')
     li(ng-repeat="business in eatNowCtrl.businesses")
@@ -15,4 +16,4 @@ div(data-role='content', data-theme="c")
         p.ui-li-aside
           | Discount {{business.discount}}%
   div
-    include contactus
+    include ../../shared/jade/contactus

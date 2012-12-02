@@ -1,0 +1,28 @@
+include ../../shared/jade/partialLogo
+mixin pageSignup(name)
+  div(data-role='header', data-position='fixed', data-tap-toggle='false', data-update-page-padding='false')
+    //- a(href='#', data-slidemenu='#slidemenu', data-slideopen='false', data-icon='smico', data-corners='false', data-iconpos='notext') Menu
+    h1 Signup
+  div(data-role='content')
+    form
+      ul(data-role="listview", data-inset="true")
+        li(data-role="fieldcontain")
+          mixin logo(name)
+          br
+          p {{accountCtrl.error}}
+        li(data-role="fieldcontain")
+          fieldset(data-role="controlgroup",data-type="horizontal")
+            legend Username:
+            input(type='text', ng-model="accountCtrl.username", name='username', value='',placeholder="Username",autocapitalize="off",autocorrect="off")
+        li(data-role="fieldcontain")
+          fieldset(data-role="controlgroup",data-type="horizontal")
+            legend Password:
+            input(type='password', ng-model="accountCtrl.password", name='password', value='',placeholder="Password",autocapitalize="off",autocorrect="off")
+        li(data-role="fieldcontain")
+          fieldset(data-role="controlgroup",data-type="horizontal")
+            legend Email:
+            input(type='email', ng-model="accountCtrl.email", name='email', value='',placeholder="Email",autocapitalize="off",autocorrect="off")
+        li.ui-body
+          fieldset
+            button.ui-block-a(ng-click="accountCtrl.signup()")
+              | Signup
